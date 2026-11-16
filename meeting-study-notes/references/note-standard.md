@@ -8,6 +8,16 @@ status: experimental
 
 This is an editorial structure, not a form to fill mechanically. Follow the output-language policy in SKILL.md: learner-facing prose and headings use the consuming project's language unless explicitly overridden. The English section names below describe functions, not mandatory output labels. Do not impose fixed headings or item counts regardless of content.
 
+## Requirements, decisions, and deadlines
+
+When supported by the source, place this section immediately below the title, before topic and context. Use a natural heading in the project language, such as "Requirements and deadlines". Omit it when no relevant information was given.
+
+Collect instructor instructions and established decisions about homework, deliverables, preparation, assessment criteria, tests, final exams, dates, submission channels, and permitted materials. For other meeting types, apply the same treatment to explicitly assigned work and established deadlines without imposing academic terminology. State what is required, by whom if specified, when, and under which conditions, preserving exact thresholds, scope, and exceptions. Do not invent missing details.
+
+Distinguish confirmed instructions from proposals, tentative dates, and unresolved questions. Student speculation or instructor silence does not establish a requirement. Check later source chunks for corrections, cancellations, or qualifications and show the final supported state; briefly explain a change when needed to prevent confusion. Resolve a relative deadline to a calendar date only when the meeting date and reference are unambiguous; otherwise preserve the original wording and uncertainty. Do not confuse the processing date with the meeting date.
+
+This section must retain actionable detail rather than merely link to scattered body paragraphs. Keep relevant explanations and worked examples in the main note where needed. Preserve evidence links in adjacent HTML comments.
+
 ## Topic and context
 
 Choose a title reflecting the actual topic. Briefly establish scope and the question the material helps answer. Include the course and meeting date if known. Do not confuse processing date with meeting date.

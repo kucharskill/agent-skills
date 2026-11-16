@@ -38,4 +38,6 @@ Preserve educationally meaningful boundaries, values, and ranges, including thos
 
 Evidence must come from the core range. Repeated context restores continuity rather than creating duplicate items. Link an answer or correction in the next chunk after reading it. Preserve uncertain terms in short quotations and explain what evidence is missing.
 
+Capture every instructor instruction or established decision about assignments, preparation, assessment, tests, exams, dates, submission methods, or permitted materials as a `requirement` item (or a linked `correction` when revised). Preserve exact quantities, thresholds, deadlines, responsible participants if specified, and conditions. Record who established the instruction and whether it is confirmed, tentative, or unresolved. Link later changes or cancellations across chunks; do not infer approval from silence or fill in missing details. Identify these items in the compact handoff so the writer can build the opening requirements section.
+
 At completion, return only ledger paths, a brief meeting-type description, item counts per chunk, and issues requiring separate verification. Do not return the full transcript or lengthy working analysis.

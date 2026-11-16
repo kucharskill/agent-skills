@@ -13,7 +13,7 @@ Produce a standalone, accessible text that helps readers understand and revisit 
 
 ## Reader-facing result
 
-Read the [note standard](references/note-standard.md) before writing. Preserve three layers: topic and context (or meaningful chronology), developed explanations, and key takeaways. Adapt sections to the material; omit empty headings and invented exercises, definitions, or conclusions.
+Read the [note standard](references/note-standard.md) before writing. Preserve three layers: topic and context (or meaningful chronology), developed explanations, and key takeaways. Adapt sections to the material; omit empty headings and invented exercises, definitions, or conclusions. If the meeting contains instructor requirements or decisions about homework, assessment, tests, exams, or deadlines, place a distinct section immediately below the title, before the topic introduction. Follow the [note standard](references/note-standard.md) for evidence and uncertainty.
 
 Write the notes in the consuming project's language, including headings and review questions. An explicit user language instruction takes precedence; otherwise follow project documentation and existing learner-facing materials. Do not infer the output language from this skill's English instructions or automatically from the transcript. If project conventions are ambiguous, ask before drafting. Preserve original-language terms when educationally necessary.
 

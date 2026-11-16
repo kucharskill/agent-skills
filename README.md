@@ -23,7 +23,7 @@ Provide a local UTF-8 Markdown or text transcript and an output destination. For
 
 The workflow segments the transcript, extracts detailed content one chunk at a time, resolves material ambiguities, synthesizes explanations and examples, and obtains a fresh independent review. It adapts to lectures, student exercises, discussions, and mixed meetings.
 
-The reader-facing result contains topic and context, developed explanations, and useful takeaways or recall questions. Inapplicable sections are omitted. Visible notes contain no timestamps or processing narrative; evidence links may remain in HTML comments. Substantive uncertainty remains visible.
+The reader-facing result contains topic and context, developed explanations, and useful takeaways or recall questions. When present in the source, instructor requirements and decisions about assignments, assessment, exams, and deadlines appear in a distinct section immediately below the title. Confirmed decisions remain separate from tentative proposals and unresolved questions. Inapplicable sections are omitted. Visible notes contain no timestamps or processing narrative; evidence links may remain in HTML comments. Substantive uncertainty remains visible.
 
 By default, a single-transcript note is named `notatka_<transcript-stem>.md`; project conventions or an explicit destination take precedence. The output directory must come from the consuming project or user.
 
