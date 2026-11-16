@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meeting Study Notes"
+  short_description: "Detailed study notes with independent review"
+  default_prompt: "Use $meeting-study-notes to turn this transcript into accessible educational notes in the consuming project's language."
