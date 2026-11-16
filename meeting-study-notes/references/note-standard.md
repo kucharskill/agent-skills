@@ -30,6 +30,10 @@ Identify concrete distinctions, rules, relationships, lessons from exercises, an
 
 Add recall questions when they help reconstruct an explanation or apply a distinction. Do not call them exam questions without support. Answers should follow from the note; unresolved meeting questions must not become exercises with supposedly established answers.
 
+## Optional illustrations
+
+Use 0 to 10 representative screenshots only when they document displayed material or improve understanding. Place each near the relevant explanation with concise alt text and, when helpful, a factual caption in the project language. Keep timestamps and selection details in hidden comments or working files. A useful slide, diagram, exercise, or exam-information screen is evidence or teaching material, not decoration. Keep the text understandable without opening an image. Follow the [screenshot contract](screenshots.md) for selection, cropping, and durable relative asset paths.
+
 ## Internal evidence
 
 Keep extraction IDs, precise source ranges, timestamps, technical verification details, and agent-work information in HTML comments or separate working files. Readers must not need them to understand the note. Never hide a qualification whose omission changes the visible meaning.

@@ -25,6 +25,12 @@ The workflow segments the transcript, extracts detailed content one chunk at a t
 
 The reader-facing result contains topic and context, developed explanations, and useful takeaways or recall questions. Inapplicable sections are omitted. Visible notes contain no timestamps or processing narrative; evidence links may remain in HTML comments. Substantive uncertainty remains visible.
 
+By default, a single-transcript note is named `notatka_<transcript-stem>.md`; project conventions or an explicit destination take precedence. The output directory must come from the consuming project or user.
+
+If transcript YAML contains `screenshots_dir` (or a documented project equivalent), a subagent can selectively inspect existing screenshots after the text draft and include 0 to 10 useful illustrations. Relative paths resolve from the transcript directory. Selection compares displayed content with relevant passages; timestamp proximity alone is insufficient. Missing or unhelpful screenshots are skipped. Only existing still images are processed, never a recording. Optional cropping or downscaling uses system FFmpeg when available; otherwise copy the original. No new dependency is required, and source screenshots remain unchanged.
+
+In a shared notes directory, copied assets go in `<note-stem>_img/`; in a directory dedicated to one note, they go in `img/`. Markdown uses relative links to these durable copies, never links into a temporary screenshot cache.
+
 Working manifests, extraction ledgers, and review reports stay under the consuming project's `.tmp/`. Original transcripts remain unchanged. Private transcripts and generated student notes do not belong in this repository.
 
 ### Requirements and helper commands

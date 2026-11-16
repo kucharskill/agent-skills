@@ -19,7 +19,7 @@ Write the notes in the consuming project's language, including headings and revi
 
 Do not include visible timestamps, raw transcript speaker labels, control reports, or accounts of agent work. Write naturally without self-presentation or references to AI. Keep unresolved substantive uncertainty visible. Put source references and extraction IDs in adjacent HTML comments, for example `<!-- evidence: C002:I04,I08; source: chunk-002.md -->`.
 
-Do not change the transcript. Follow project document conventions and output locations. If no destination is specified, save a distinctly named note beside the source. Store working material in a separate directory under the consuming project's `.tmp/`. Follow project conventions for provenance in YAML or hidden comments.
+Do not change the transcript. Resolve the output directory and whether it is shared by multiple notes or dedicated to this note from the consuming project or an explicit user instruction; ask if no destination can be established. Follow project naming conventions; otherwise name a single-transcript note `notatka_<transcript-stem>.md` (for example, `session.md` becomes `notatka_session.md`). Do not invent a single-source filename for a multi-source note. Store working material in a separate directory under the consuming project's `.tmp/`. Follow project conventions for provenance in YAML or hidden comments.
 
 ## 1. Segment and cover the entire source
 
@@ -60,9 +60,13 @@ The writer reads ledgers rather than full transcript dumps. Read content, attrib
 
 Remove repetition without losing new qualifications or examples. Reordering may improve learning but must preserve question-answer relationships. The ending should support revision rather than replace the developed explanation with another summary. Do not claim exam relevance without source support.
 
-## 4. Independent review and revision
+## 4. Optional screenshot evidence
 
-Before declaring the note ready, assign a fresh subagent the [review task](references/review.md). Neither the extractor nor the writer may be the only reviewer. Provide source chunks, manifest, ledgers, and draft without an expected verdict or your own suspected-error list.
+After drafting the text, if the source transcript YAML points to an existing screenshot folder, delegate selective visual inspection to a subagent using the [screenshot contract](references/screenshots.md). Use `screenshots_dir` or an explicitly documented project equivalent. Retain 0 to 10 representative images per note, only when they provide evidence of displayed material or educational value. Missing or unhelpful screenshots are a normal reason to include none. Never open a recording or extract new frames in this stage.
+
+## 5. Independent review and revision
+
+Before declaring the note ready, assign a fresh subagent the [review task](references/review.md). Neither the extractor nor the writer may be the only reviewer. Provide source chunks, manifest, ledgers, draft, and any selected images with their visual-selection record, without an expected verdict or your own suspected-error list.
 
 The reviewer checks coverage, fidelity, attribution, clarity, and educational usefulness. Findings need evidence, severity, and a proposed correction. Apply corrections or justify rejecting a finding. Have changed passages rechecked without creating an endless cosmetic revision loop. An unresolved substantive issue means the note remains a draft; tell the user briefly.
 
