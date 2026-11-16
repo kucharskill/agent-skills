@@ -8,9 +8,15 @@ status: experimental
 
 This is an editorial structure, not a form to fill mechanically. Follow the output-language policy in SKILL.md: learner-facing prose and headings use the consuming project's language unless explicitly overridden. The English section names below describe functions, not mandatory output labels. Do not impose fixed headings or item counts regardless of content.
 
+## Title and meeting details
+
+Use a short, factual title naming the topic, preferably the instructor's concise topic wording. Avoid editorial subtitles, extended prose, and titles that read like a table of contents. Optionally append two or three key concepts in parentheses, as short labels rather than a detailed outline. Do not force this pattern on material it does not fit.
+
+Directly below the title, add one short natural line identifying the meeting and its known date, in the project language. For example: "Prepared from the class: Introduction to economics, 8 November 2026." Adapt "class" to a seminar, workshop, or other meeting as appropriate. Use only established names and dates; omit unavailable details rather than inventing them or inserting technical placeholders. The date is the meeting date, never the processing date. This simple origin line is not a report about transcription or source processing.
+
 ## Requirements, decisions, and deadlines
 
-When supported by the source, place this section immediately below the title, before topic and context. Use a natural heading in the project language, such as "Requirements and deadlines". Omit it when no relevant information was given.
+When supported by the source, place this section below the meeting-details line, before the substantive body. Use a natural heading in the project language, such as "Requirements and deadlines". Omit it when no relevant information was given.
 
 Collect instructor instructions and established decisions about homework, deliverables, preparation, assessment criteria, tests, final exams, dates, submission channels, and permitted materials. For other meeting types, apply the same treatment to explicitly assigned work and established deadlines without imposing academic terminology. State what is required, by whom if specified, when, and under which conditions, preserving exact thresholds, scope, and exceptions. Do not invent missing details.
 
@@ -20,7 +26,7 @@ This section must retain actionable detail rather than merely link to scattered 
 
 ## Topic and context
 
-Choose a title reflecting the actual topic. Briefly establish scope and the question the material helps answer. Include the course and meeting date if known. Do not confuse processing date with meeting date.
+Start the substantive body with the relevant concept or problem. Establish scope through the content itself rather than an appraisal of the lecture. Do not repeat the course or date in an artificial introductory paragraph after the meeting-details line.
 
 Describe chronology only when the order of discussion or problem solving has educational value. Otherwise use a logical topic map without a separate timeline. Omit greetings, breaks, and technical interruptions. Separate important organizational requirements from substantive content.
 
@@ -32,7 +38,7 @@ For exercises, preserve necessary data, reasoning, and instructor corrections. D
 
 Do not invent definitions, explanations, examples, recommendations, answers, or substantive corrections from general knowledge or internet sources. Do not turn an unclear term into fluent but unsupported prose. Preserve important terms and distinctions even when the instructor only touched on them: first inspect surrounding context and available slides, then retain the supported scope without expanding it into textbook coverage. A brief mention may warrant a brief treatment, while incidental mentions and undeveloped slide labels need not all be included or explained. Do not present an uncertain definition as settled. Record unresolved processing doubts internally and withhold final delivery if faithful treatment of an important point remains impossible.
 
-Write complete, accessible sentences. Use lists for parallel items or sequences and tables for actual comparisons. Avoid both walls of text and unexplained shorthand. Do not impose a word limit that removes exceptions or examples.
+Write as a student's study note, using complete, accessible sentences. Avoid technical provenance phrases such as "dated in the source", "the transcript indicates", or "the material records", and avoid narration about automated processing or reviewing a lecture. Reduce repetitive "the instructor says" framing while retaining necessary attribution for opinions, contested positions, and assessment requirements. Do not use U+2014 or U+2013 in generated substantive prose; use a plain hyphen or recast the sentence. Use lists for parallel items or sequences and tables for actual comparisons. Avoid both walls of text and unexplained shorthand. Do not impose a word limit that removes exceptions or examples.
 
 ## Key takeaways
 
