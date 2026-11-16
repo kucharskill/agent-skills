@@ -21,6 +21,8 @@ Provide a local UTF-8 Markdown or text transcript and an output destination. For
 
 > Use $meeting-study-notes on transcripts/session.md. Save the notes to notes/session.md and follow this project's language conventions.
 
+A note is not mandatory for every transcript. After complete staged reading, material with no useful educational content or actionable requirements is skipped, with independent confirmation when subagents are available. No empty note, placeholder, or image directory is created; the user receives a brief reason. Short material containing assignments, assessment instructions, or deadlines can still warrant a note. Input-processing failures are reported as limitations rather than treated as proof that the material is useless.
+
 The workflow segments the transcript, extracts detailed content one chunk at a time, resolves material ambiguities, synthesizes explanations and examples, and obtains a fresh independent review. It adapts to lectures, student exercises, discussions, and mixed meetings.
 
 The reader-facing result contains topic and context, developed explanations, and useful takeaways or recall questions. When present in the source, instructor requirements and decisions about assignments, assessment, exams, and deadlines appear in a distinct section immediately below the title. Confirmed decisions remain separate from tentative proposals and unresolved questions. Inapplicable sections are omitted. Visible notes contain no timestamps or processing narrative; evidence links may remain in HTML comments. Substantive uncertainty remains visible.

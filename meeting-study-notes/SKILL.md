@@ -43,6 +43,12 @@ node "/path/to/meeting-study-notes/scripts/check_extraction.js" "manifest.json" 
 
 The checker verifies a ledger for every range, identifiers, and verbatim quotes in the corresponding core. It cannot establish semantic completeness; a fresh reviewer must assess that.
 
+## Decide whether a note is useful
+
+After all source chunks have been covered, assess whether the material supports a useful note. Do not produce a note merely because a transcript exists. Greetings, technical setup, unrelated small talk, or repetition with no useful explanation, exercise, distinction, or actionable information may justify skipping. Do not decide from the opening or a sparse sample, and do not impose a minimum duration or word count. Short material can still be valuable. Assignments, assessment requirements, exam information, and deadlines can justify a brief note even without teaching content.
+
+If nothing worth retaining remains, have a fresh subagent verify the skip decision against the source chunks and ledgers, checking especially for overlooked substantive content and requirements. Use the [review contract](references/review.md) in skip-review mode. Once confirmed, create no final Markdown file, placeholder, or image directory; keep only a short reason and coverage record in project `.tmp/` and tell the user the note was skipped and why. Do not delete or overwrite an existing note. Unreadable, incomplete, or unprocessed source is a processing limitation, not evidence that the material lacks value; report that limitation instead of declaring the note unnecessary. If delegation is unavailable, disclose the lack of independent confirmation.
+
 ## 2. Resolve uncertainty separately
 
 Isolate names, numbers, and terms whose transcription could change meaning. Delegate targeted verification to another subagent when needed. Supply relevant excerpts and questions, not the entire lecture.

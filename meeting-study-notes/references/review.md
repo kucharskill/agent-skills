@@ -6,6 +6,12 @@ status: experimental
 
 # Fresh reviewer task
 
+## Skip-review mode
+
+When asked to verify that no note should be created, inspect every source core and ledger sequentially, without requiring a draft. Independently assess whether any explanation, distinction, example, exercise, assignment, assessment instruction, exam information, or deadline is worth retaining. Do not judge by length or the opening alone. Return either a supported skip decision with coverage and reasons, or concrete overlooked material that warrants a note. Distinguish lack of useful content from unreadable or incomplete input. Keep the report in project `.tmp/`; a confirmed skip produces no final note or image directory and must not remove any pre-existing note. Missing or unhelpful screenshots alone never justify skipping useful text.
+
+## Note-review mode
+
 Assess a note written by another author. You receive SKILL.md, the note standard, source manifest, chunks, extraction ledgers, and draft. Do not assume the ledgers are complete. Do not edit the note files. Save a separate report and return concise findings with proposed corrections.
 
 1. Read every core range sequentially, not just a beginning-and-end sample. Compare source, ledger, and note, section by section when needed. Identify important information, examples, and exceptions lost during extraction or synthesis.

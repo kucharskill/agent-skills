@@ -40,4 +40,6 @@ Evidence must come from the core range. Repeated context restores continuity rat
 
 Capture every instructor instruction or established decision about assignments, preparation, assessment, tests, exams, dates, submission methods, or permitted materials as a `requirement` item (or a linked `correction` when revised). Preserve exact quantities, thresholds, deadlines, responsible participants if specified, and conditions. Record who established the instruction and whether it is confirmed, tentative, or unresolved. Link later changes or cancellations across chunks; do not infer approval from silence or fill in missing details. Identify these items in the compact handoff so the writer can build the opening requirements section.
 
+If a chunk contains no useful educational or actionable content, an empty `items` array with specific justified exclusions is valid. Do not invent items to populate a ledger. A content-free chunk does not establish that the whole meeting is useless; leave the overall decision until all chunks have been read.
+
 At completion, return only ledger paths, a brief meeting-type description, item counts per chunk, and issues requiring separate verification. Do not return the full transcript or lengthy working analysis.
