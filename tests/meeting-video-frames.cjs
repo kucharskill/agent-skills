@@ -53,6 +53,22 @@ const long=path.join(root,'long.mp4');
 run('ffmpeg',['-v','error','-f','lavfi','-i','color=c=green:s=160x90:r=1/60:d=1200','-t','1200','-c:v','libx264','-pix_fmt','yuv420p',long]);
 const l=extract(long);const lm=JSON.parse(fs.readFileSync(l.manifest));
 assert.equal(lm.interval_seconds,60); assert(lm.skipped.every((s,i)=>s.source_seconds===(i+1)*60));assert.equal(lm.frames.length,1);assert.equal(lm.skipped.length,19);
+// A 60.002-second frame period is valid for 60-second sampling. At the
+// 1000-second boundary, showinfo rounds 1020.034 to 1020.03: the logged
+// difference from 960.032 is only 59.998, although decoding met the interval.
+const rounded=path.join(root,'rounded-long.mp4');
+run('ffmpeg',['-v','error','-f','lavfi','-i','color=c=green:s=160x90:r=500/30001:d=1200.04','-c:v','libx264','-pix_fmt','yuv420p',rounded]);
+const roundedResult=extract(rounded);
+const roundedManifest=JSON.parse(fs.readFileSync(roundedResult.manifest));
+assert.equal(roundedManifest.status,'complete');
+assert.equal(roundedManifest.interval_seconds,60);
+assert.equal(roundedManifest.candidate_count,20);
+const roundedTimes=[...roundedManifest.frames,...roundedManifest.skipped].map(frame=>frame.source_seconds).sort((a,b)=>a-b);
+assert.equal(roundedTimes.length,20);
+assert.equal(roundedTimes[16],960.032);
+assert.equal(roundedTimes[17],1020.03);
+assert(roundedTimes[17]-roundedTimes[16]<59.999,'Fixture must reproduce the rounded interval that previously failed');
+assert.equal(extract(rounded).cached,true);
 const esm=path.join(root,'esm');fs.mkdirSync(esm);fs.writeFileSync(path.join(esm,'package.json'),'{"type":"module"}');fs.copyFileSync(script,path.join(esm,'extract.js'));
 assert.equal(JSON.parse(run('node',[path.join(esm,'extract.js'),long]).stdout).cached,true);
 console.log(JSON.stringify({passed:true,checks:['actual FFmpeg short and 20-minute recordings','adjacent duplicates omitted; returning slides retained','fractional timestamps and FFmpeg second-based filenames','one extraction process','nonzero input timestamp origin','JPEGs and unchanged original','cached reuse and missing-image repair','concurrency lock','Unicode and spaces','source path and mtime identity','invalid input and options','ES module compatibility'],example:result,working_directory:root},null,2));
