@@ -54,11 +54,21 @@ Requires Node.js 18+ and system FFmpeg and FFprobe on PATH. No npm packages, Pyt
 node meeting-video-frames/scripts/extract_frames.js recordings/session.mp4
 ```
 
-Sampling uses approximately 20 candidates for shorter recordings, with a minimum one-second interval. Recordings lasting at least 20 minutes are sampled once per minute. Similar candidates, including returns to earlier retained images, are omitted using a small RGB fingerprint. Retained images are full-resolution JPEGs. The optional `--threshold 0.015` sets visual similarity tolerance; it does not alter sampling frequency.
+Sampling uses approximately 20 candidates for shorter recordings, with a minimum one-second interval. Recordings lasting at least 20 minutes are sampled once per minute. One FFmpeg process decodes the recording, samples frames with select, removes similar consecutive samples with mpdecimate, and saves full-resolution JPEGs. A return to an earlier slide after a different one is retained. There are no JavaScript image comparisons, repeated extraction processes, or filename-renaming steps. The whole video is decoded; sparse output does not guarantee a faster run.
 
-The command prints JSON containing the absolute output directory, manifest, log, counts, and cache status. Results use the OS temporary directory, including Windows TEMP, under `meeting-video-frames/<parent>--<video-name>--<path-id>/<source-version-and-settings-id>/`. The manifest associates each screenshot with the complete source path and a requested source-relative time. Completed results are reused; missing images are regenerated. A source or settings change gets a separate directory. Source identity uses path, size, and modification time rather than a full-content hash.
+The command prints JSON containing the absolute output directory, manifest, log, counts, and cache status. Results use the OS temporary directory, including Windows TEMP, under `meeting-video-frames/<parent>--<video-name>--<path-id>/<source-version-and-settings-id>/`. The manifest associates each screenshot with the complete source path and its source-relative time. FFmpeg directly names images such as `frame-000060s.jpg` using -frame_pts 1 and a one-second encoder time base. Names round to whole seconds; source_seconds in the manifest preserves the finer timestamp reported by FFmpeg. Times start at the first decoded video frame, so transcript comparison requires the same recording version and consideration of any audio/video start offset. Completed results are reused; missing images are regenerated. A source or settings change gets a separate directory. Source identity uses path, size, and modification time rather than a full-content hash.
 
 The skill does not view images, perform OCR, summarize recordings, or choose illustrations. Later analysis or copying images into notes requires a separate request. Visual similarity is a heuristic: small slide changes can be missed and moving overlays may produce extra images. Sparse sampling can miss slides between samples. TEMP is disposable; request permanent copies when needed. Private images, manifests, and logs do not belong in this repository.
+
+## Verification
+
+Run the synthetic FFmpeg integration checks from the repository:
+
+```sh
+node tests/meeting-video-frames.cjs
+```
+
+Fixtures stay under .tmp/; generated extraction artifacts use the OS temporary directory. Checks cover deduplication, second-based filenames, fractional timestamps, long-recording sampling, cache reuse and repair, input errors, and module compatibility.
 
 ## Scope and limitations
 
