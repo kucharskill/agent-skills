@@ -69,6 +69,20 @@ assert.equal(roundedTimes[16],960.032);
 assert.equal(roundedTimes[17],1020.03);
 assert(roundedTimes[17]-roundedTimes[16]<59.999,'Fixture must reproduce the rounded interval that previously failed');
 assert.equal(extract(rounded).cached,true);
+// The true timestamp 2940.498 is logged as 2940.5. FFmpeg correctly writes
+// frame-002940s.jpg; rounding the logged value again would invent 2941.
+const halfSecond=path.join(root,'half-second.mp4');
+run('ffmpeg',['-v','error','-f','lavfi','-i','testsrc2=s=160x90:r=24500/1470249:d=3001','-c:v','libx264','-pix_fmt','yuv420p',halfSecond]);
+const halfResult=extract(halfSecond);
+const halfManifest=JSON.parse(fs.readFileSync(halfResult.manifest));
+assert.equal(halfManifest.status,'complete');
+const boundaryFrame=halfManifest.frames.find(frame=>frame.source_seconds===2940.5);
+assert(boundaryFrame,'Fixture must reproduce the half-second rounding boundary');
+assert.equal(boundaryFrame.file,'frame-002940s.jpg');
+assert.equal(boundaryFrame.filename_seconds,2940);
+assert.equal(Math.round(boundaryFrame.source_seconds),2941);
+assert(fs.statSync(path.join(halfResult.directory,boundaryFrame.file)).size>0);
+assert.equal(extract(halfSecond).cached,true);
 const esm=path.join(root,'esm');fs.mkdirSync(esm);fs.writeFileSync(path.join(esm,'package.json'),'{"type":"module"}');fs.copyFileSync(script,path.join(esm,'extract.js'));
 assert.equal(JSON.parse(run('node',[path.join(esm,'extract.js'),long]).stdout).cached,true);
 console.log(JSON.stringify({passed:true,checks:['actual FFmpeg short and 20-minute recordings','adjacent duplicates omitted; returning slides retained','fractional timestamps and FFmpeg second-based filenames','one extraction process','nonzero input timestamp origin','JPEGs and unchanged original','cached reuse and missing-image repair','concurrency lock','Unicode and spaces','source path and mtime identity','invalid input and options','ES module compatibility'],example:result,working_directory:root},null,2));

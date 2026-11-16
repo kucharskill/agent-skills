@@ -97,12 +97,21 @@
       const tolerance = 0.001 + printedTimeError(samples[i]) + printedTimeError(samples[i - 1]);
       if (samples[i] - samples[i - 1] < interval - tolerance) throw new Error('Sampling interval invariant failed');
     }
-    manifest.frames = kept.map(seconds => ({ file: 'frame-' + String(Math.round(seconds)).padStart(6, '0') + 's.jpg', source_seconds: seconds, filename_seconds: Math.round(seconds) }));
+    // FFmpeg names files from full-precision PTS. Rounded showinfo text can
+    // cross a half-second boundary, so never reconstruct filenames from it.
+    const files = (await fs.readdir(directory)).filter(file => framePattern.test(file))
+      .sort((a, b) => Number(framePattern.exec(a)[1]) - Number(framePattern.exec(b)[1]));
+    if (files.length !== kept.length) throw new Error('Frame files do not match retained timestamps');
+    manifest.frames = kept.map((seconds, index) => {
+      const file = files[index], filenameSeconds = Number(framePattern.exec(file)[1]);
+      if (!Number.isSafeInteger(filenameSeconds) || Math.abs(filenameSeconds - seconds) > 0.501 + printedTimeError(seconds)) {
+        throw new Error('Frame filename does not match its source timestamp: ' + file);
+      }
+      return { file, source_seconds: seconds, filename_seconds: filenameSeconds };
+    });
     const keptTimes = new Set(kept);
     manifest.skipped = samples.filter(seconds => !keptTimes.has(seconds)).map(seconds => ({ source_seconds: seconds, reason: 'mpdecimate' }));
     manifest.candidate_count = samples.length;
-    const files = (await fs.readdir(directory)).filter(file => framePattern.test(file));
-    if (files.length !== manifest.frames.length || new Set(manifest.frames.map(frame => frame.file)).size !== files.length) throw new Error('Frame files do not match retained timestamps');
     for (const frame of manifest.frames) if (!(await fs.stat(path.join(directory, frame.file))).size) throw new Error('Missing or empty JPEG: ' + frame.file);
     const after = await fs.stat(source);
     if (after.size !== stat.size || after.mtimeMs !== stat.mtimeMs) throw new Error('Source changed during extraction; result is incomplete');
