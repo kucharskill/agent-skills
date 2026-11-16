@@ -35,7 +35,7 @@ When FFmpeg is available, give it the selected PNG/JPEG or other supported still
 ffmpeg -nostdin -n -i "/screenshots/frame-000720s.jpg" -vf "crop=1200:800:100:100" -frames:v 1 -update 1 "/notes/notatka_session_img/process-diagram.png"
 ```
 
-These numbers are illustrative, not a default crop. Optional scaling must preserve aspect ratio, avoid upscaling, and keep text readable at the intended display size. Preserve titles, legends, axes, units, qualifications, and all data needed to solve an exercise. Do not use generative editing or alter displayed facts.
+These numbers are illustrative, not a default crop. Optional scaling must preserve aspect ratio, avoid upscaling, and keep text readable at the intended display size. Preserve substantive titles, legends, axes, units, meaningful captions, qualifications, and all data needed to solve an exercise. A clearly separate empty editor field or template instruction is not a substantive title and may be cropped away when all educational content and necessary context remain intact. Do not treat every visual trace of the source as a defect: editor underlines or marks within content do not justify retouching or losing data. Do not use generative editing or alter displayed facts.
 
 Open the final saved image and verify readability and completeness. If a crop loses important context, use a wider crop or the original. If visual tools are unavailable, omit uninspected images. Record skipped optional work honestly rather than claiming inspection.
 
