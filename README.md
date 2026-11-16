@@ -7,6 +7,7 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | Skill | Purpose | Status |
 | --- | --- | --- |
 | [Meeting Study Notes](meeting-study-notes/SKILL.md) | Detailed educational notes from lectures, exercises, seminars, and discussions, with staged reading and independent review | Experimental |
+| [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
 
 ## Installation
 
@@ -40,6 +41,24 @@ node meeting-study-notes/scripts/check_extraction.js .tmp/session/segments/manif
 The agent creates extraction ledgers between these commands. Segmentation defaults to 9000 characters with preceding context and supports `--target-chars` and `--overlap-chars`. Use `--help` for exact options. The checker verifies structure and source quotations, not semantic completeness.
 
 The skill itself calls no paid transcription service and includes no speech-to-text engine. Agent usage and optional targeted source verification depend on the host's services, access, and pricing.
+
+## Meeting Video Frames
+
+Provide a local meeting video and request screenshot extraction:
+
+> Use $meeting-video-frames on recordings/session.mp4. Extract screenshots and report their location without analyzing the recording.
+
+Requires Node.js 18+ and system FFmpeg and FFprobe on PATH. No npm packages, Python, transcription service, or network access are needed.
+
+```sh
+node meeting-video-frames/scripts/extract_frames.js recordings/session.mp4
+```
+
+Sampling uses approximately 20 candidates for shorter recordings, with a minimum one-second interval. Recordings lasting at least 20 minutes are sampled once per minute. Similar candidates, including returns to earlier retained images, are omitted using a small RGB fingerprint. Retained images are full-resolution JPEGs. The optional `--threshold 0.015` sets visual similarity tolerance; it does not alter sampling frequency.
+
+The command prints JSON containing the absolute output directory, manifest, log, counts, and cache status. Results use the OS temporary directory, including Windows TEMP, under `meeting-video-frames/<parent>--<video-name>--<path-id>/<source-version-and-settings-id>/`. The manifest associates each screenshot with the complete source path and a requested source-relative time. Completed results are reused; missing images are regenerated. A source or settings change gets a separate directory. Source identity uses path, size, and modification time rather than a full-content hash.
+
+The skill does not view images, perform OCR, summarize recordings, or choose illustrations. Later analysis or copying images into notes requires a separate request. Visual similarity is a heuristic: small slide changes can be missed and moving overlays may produce extra images. Sparse sampling can miss slides between samples. TEMP is disposable; request permanent copies when needed. Private images, manifests, and logs do not belong in this repository.
 
 ## Scope and limitations
 

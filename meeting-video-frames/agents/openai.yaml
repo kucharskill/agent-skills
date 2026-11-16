@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meeting Video Frames"
+  short_description: "Extract sparse meeting frames without content analysis"
+  default_prompt: "Use $meeting-video-frames to extract deduplicated screenshots from this recording and report their temporary location without analyzing the content."
