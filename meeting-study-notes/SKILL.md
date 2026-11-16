@@ -53,7 +53,7 @@ If nothing worth retaining remains, have a fresh subagent verify the skip decisi
 
 Isolate names, numbers, and terms whose transcription could change meaning. Delegate targeted verification to another subagent when needed. Supply relevant excerpts and questions, not the entire lecture.
 
-First consult neighboring statements, slides, and supplied materials. Search externally only for a specific unresolved issue and prefer primary sources. Distinguish transcription correction from outside supplementation. Do not silently replace the instructor's view with a view found online. Require evidence and confidence, not just proposed wording. Without confirmation, keep the doubt in HTML comments or the review report, not visible caveats about the transcript or its processing. Use only wording supported by the evidence, without inventing the missing interpretation. Withhold the final note if an unresolved issue prevents a faithful standalone treatment.
+First consult neighboring statements, slides, and supplied materials. Search externally only for a specific unresolved issue and prefer primary sources. External verification may establish term recognition or assess a doubt; it must not expand the note with definitions, explanations, examples, or substantive corrections from general knowledge or the internet. Do not silently replace the instructor's view with a view found online. Require evidence and confidence, not just proposed wording. Without confirmation, keep the doubt in HTML comments or the review report, not visible caveats about the transcript or its processing. Use only wording supported by the evidence, without inventing the missing interpretation. Withhold the final note if an unresolved issue prevents a faithful standalone treatment.
 
 ## 3. Synthesize the note
 
@@ -63,6 +63,8 @@ The writer reads ledgers rather than full transcript dumps. Read content, attrib
 - Exercise: preserve the task, relevant proposals, wrong paths, corrections, and reasoning toward a solution. Do not invent an answer when none was established.
 - Discussion: distinguish positions, agreement, and disagreement. Instructor silence does not confirm an answer.
 - Mixed meeting: adapt treatment to each part.
+
+Do not drop an important term or distinction merely because the instructor treated it briefly or simplistically. First check neighboring context and available slides. Retain only the scope supported by speech or supplied visual material, without supplying a textbook definition, extra explanation, example, or substantive correction from your own knowledge or the internet. Brief supported treatment is sufficient; incidental mentions may still be omitted, and not every slide label needs development. Do not repeat an uncertain definition as an established fact; resolve it, narrow the supported wording, or withhold final delivery when an important doubt remains unresolved.
 
 Remove repetition without losing new qualifications or examples. Reordering may improve learning but must preserve question-answer relationships. The ending should support revision rather than replace the developed explanation with another summary. Do not claim exam relevance without source support.
 

@@ -30,7 +30,7 @@ Use headings corresponding to concepts, problems, or questions. Readers should u
 
 For exercises, preserve necessary data, reasoning, and instructor corrections. Do not present all student suggestions as correct. Retain a wrong path when explaining it teaches a useful distinction. A student may be right, but instructor silence alone does not establish that.
 
-Do not invent examples, recommendations, or answers to fill sections. If the user requests educational additions, distinguish them from the meeting's content. Do not turn an unclear term into fluent but unsupported prose.
+Do not invent definitions, explanations, examples, recommendations, answers, or substantive corrections from general knowledge or internet sources. Do not turn an unclear term into fluent but unsupported prose. Preserve important terms and distinctions even when the instructor only touched on them: first inspect surrounding context and available slides, then retain the supported scope without expanding it into textbook coverage. A brief mention may warrant a brief treatment, while incidental mentions and undeveloped slide labels need not all be included or explained. Do not present an uncertain definition as settled. Record unresolved processing doubts internally and withhold final delivery if faithful treatment of an important point remains impossible.
 
 Write complete, accessible sentences. Use lists for parallel items or sequences and tables for actual comparisons. Avoid both walls of text and unexplained shorthand. Do not impose a word limit that removes exceptions or examples.
 

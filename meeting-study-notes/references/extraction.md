@@ -32,6 +32,8 @@ Save `extract-CNNN.json` for each chunk. Keep schema keys, identifiers, and enum
 }
 ```
 
+Retain important terms and distinctions even when discussed briefly. Record the actual supported scope and any uncertainty; do not discard the term simply because its treatment is simplified, and do not complete it from general knowledge. Flag relevant available slides or neighboring passages for targeted verification. Incidental mentions need not become items, and every slide label does not require an explanation.
+
 Not every utterance needs a separate item, but do not merge so many threads that a condition, exception, concrete example, or change of position disappears. Preserve task data and its resolution if given. Include student questions that exposed a misunderstanding and how it was explained. Do not infer instructor acceptance when the source leaves it unresolved.
 
 Preserve educationally meaningful boundaries, values, and ranges, including those stated by students. Do not replace an explicit limit with vague words such as "appropriate" or "specified." Separate an actual recommendation from an inferred sequence of subsequent work.
