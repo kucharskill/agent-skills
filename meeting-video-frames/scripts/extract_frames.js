@@ -90,7 +90,13 @@
     const times = label => Array.from(diagnostics.matchAll(new RegExp('showinfo@' + label + '[^\\r\\n]*?\\bn:\\s*\\d+[^\\r\\n]*?\\bpts_time:([^\\s]+)', 'g')), match => Number(match[1]));
     const samples = times('sample'), kept = times('kept');
     if (!samples.length || !kept.length || [...samples, ...kept].some(time => !Number.isFinite(time) || time < 0)) throw new Error('Missing or invalid frame timestamps in FFmpeg diagnostics');
-    for (let i = 1; i < samples.length; i++) if (samples[i] - samples[i - 1] < interval - 0.001) throw new Error('Sampling interval invariant failed');
+    // showinfo prints pts_time with six significant digits, so its rounding
+    // error grows with the timestamp even though FFmpeg samples at full precision.
+    const printedTimeError = seconds => seconds > 0 ? 0.5 * 10 ** (Math.floor(Math.log10(seconds)) - 5) : 0;
+    for (let i = 1; i < samples.length; i++) {
+      const tolerance = 0.001 + printedTimeError(samples[i]) + printedTimeError(samples[i - 1]);
+      if (samples[i] - samples[i - 1] < interval - tolerance) throw new Error('Sampling interval invariant failed');
+    }
     manifest.frames = kept.map(seconds => ({ file: 'frame-' + String(Math.round(seconds)).padStart(6, '0') + 's.jpg', source_seconds: seconds, filename_seconds: Math.round(seconds) }));
     const keptTimes = new Set(kept);
     manifest.skipped = samples.filter(seconds => !keptTimes.has(seconds)).map(seconds => ({ source_seconds: seconds, reason: 'mpdecimate' }));
