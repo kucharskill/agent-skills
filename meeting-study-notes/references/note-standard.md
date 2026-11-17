@@ -8,6 +8,10 @@ status: experimental
 
 This is an editorial structure, not a form to fill mechanically. Follow the output-language policy in SKILL.md: learner-facing prose and headings use the consuming project's language unless explicitly overridden. The English section names below describe functions, not mandatory output labels. Do not impose fixed headings or item counts regardless of content.
 
+## Document metadata
+
+Every note must start with YAML frontmatter containing a `lang` field whose value is a BCP 47 language tag matching the actual note text. Preserve the existing user/project language-selection policy and other project metadata. For example, a Polish note may begin with `---`, then `lang: pl-PL`, then `---` on separate lines; `pl-PL` is an example, not a default for other languages. Do not copy the transcript's language tag when the note uses a different language.
+
 ## Title and meeting details
 
 Use a short, factual title naming the topic, preferably the instructor's concise topic wording. Avoid editorial subtitles, extended prose, and titles that read like a table of contents. Optionally append two or three key concepts in parentheses, as short labels rather than a detailed outline. Do not force this pattern on material it does not fit.
