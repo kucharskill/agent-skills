@@ -12,6 +12,18 @@ This is an editorial structure, not a form to fill mechanically. Follow the outp
 
 Every note must start with YAML frontmatter containing a `lang` field whose value is a BCP 47 language tag matching the actual note text. Preserve the existing user/project language-selection policy and other project metadata. For example, a Polish note may begin with `---`, then `lang: pl-PL`, then `---` on separate lines; `pl-PL` is an example, not a default for other languages. Do not copy the transcript's language tag when the note uses a different language.
 
+Add the single stable tag `requirements` to the YAML `tags` sequence when the note contains substantive information for participants about assessment, completion requirements, exam topics, tests, or required homework, deliverables, or preparation, including mandatory work without a grade. Preserve other tags and metadata and avoid duplicates. Use the same tag across languages and projects; no indexing service is required.
+
+The tag records the presence of this information, not a participant's completion, a separately assessed meeting, or certainty about a deadline. Source-supported proposals, conditional requirements, and genuinely open assessment arrangements also qualify while retaining their status in the text. Apply the criterion semantically: optional reading recommendations, generic organizational dates alone, and incidental exam examples in the subject matter do not qualify. Omit the tag when no qualifying information remains in the note. For a qualifying Polish note, metadata may be:
+
+```yaml
+---
+lang: pl-PL
+tags:
+  - requirements
+---
+```
+
 ## Title and meeting details
 
 Use a short, factual title naming the topic, preferably the instructor's concise topic wording. Avoid editorial subtitles, extended prose, and titles that read like a table of contents. Optionally append two or three key concepts in parentheses, as short labels rather than a detailed outline. Do not force this pattern on material it does not fit.

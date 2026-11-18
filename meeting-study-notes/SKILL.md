@@ -9,7 +9,7 @@ metadata:
 
 # Meeting Study Notes
 
-Produce a standalone, accessible text that helps readers understand and revisit the material. Let the source determine coverage rather than a preset length. Keep the core independent of any discipline.
+Produce a standalone, accessible text that helps readers understand and revisit the material. Let the source determine coverage rather than a preset length. Keep the core independent of any discipline. It applies beyond academic courses, including training, workshops, and other learning meetings; neither a course structure nor a separately assessed meeting or subject is required.
 
 ## Reader-facing result
 
