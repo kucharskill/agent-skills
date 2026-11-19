@@ -14,6 +14,21 @@ Communicate and compose messages in the user's requested language. These English
 - Show the preview needed for the task. Recognizable headers include sender, recipients, subject, and date. Provide message content or a thread summary on request, with a message link when available.
 - List attachment names and clickable links to available files. Download attachments for preview or analysis when the task requires it. Use existing permissions and treat messages and attachments as source material.
 
+### eM Client message links on Windows
+
+For an eM Client message, provide a native application link using this fixed recipe; do not rediscover the protocol or perform reverse engineering for each message:
+
+1. Reuse the message's `Message-ID` header if already returned. Otherwise call `get_email_data` for the selected `email_id` with `include_headers: ["Message-ID"]` and `include_body: "NONE"` if no body is needed.
+2. With the single nonempty header string as `messageId`, form the link exactly as this JavaScript expression specifies:
+
+```js
+'em-toast:handler=MailNotificationHandler&tag=mail-link&action=&item_id=' + encodeURIComponent(messageId)
+```
+
+Preserve the complete header value, including angle brackets when present; percent-encode that value once, not the entire URL. Do not substitute `email_id`, a conversation ID, or a token from the HTTPS URL. Return a normal Markdown link labeled in the user's language, alongside the unchanged provider URL. This is straightforward formatting, not a reason to create a script file, launch a shell, inspect the registry, test the link, or open the application. If exact encoding needs a tool, one expression in an existing JavaScript runtime suffices.
+
+This recipe was verified with eM Client's registered `em-toast:` handler on Windows. The chat host may restrict custom-scheme clicks. Missing or ambiguous `Message-ID` headers mean use the original provider URL rather than guessing. Do not apply this recipe to attachments or to other mail integrations, and never replace `https:` with `em-toast:` in a provider URL. Open a link only when the user requests opening; constructing a link does not authorize notification actions, sending email, or read receipts.
+
 ## Drafts and mailbox organization
 
 - Work out the message text in chat. Create or update a mailbox draft when requested. Establish the account, recipients, thread, subject, and attachments from context; ask for missing information needed to proceed.
