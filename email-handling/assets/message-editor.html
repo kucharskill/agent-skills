@@ -1,0 +1,173 @@
+<section id="outbound-message-editor" aria-labelledby="outbound-message-heading">
+  <form>
+    <h2 id="outbound-message-heading">Edit message</h2>
+
+    <div class="message-editor-field">
+      <label for="outbound-message-destination" class="form-label" data-destination-label></label>
+      <input id="outbound-message-destination" class="form-control" name="destination" required>
+    </div>
+
+    <div class="message-editor-field" data-subject-field>
+      <label for="outbound-message-subject" class="form-label">Subject</label>
+      <input id="outbound-message-subject" class="form-control" name="subject">
+    </div>
+
+    <div class="message-editor-field">
+      <label for="outbound-message-body" class="form-label">Body</label>
+      <div class="viz-row">
+        <label class="form-check">
+          <input class="form-check-input" name="markdown" type="checkbox">
+          <span class="form-check-label">Markdown</span>
+        </label>
+        <button type="button" class="btn btn-ghost" data-toggle-preview
+                aria-controls="outbound-message-preview" aria-expanded="false">Preview</button>
+      </div>
+      <textarea id="outbound-message-body" class="form-control" name="body" rows="8"></textarea>
+      <div id="outbound-message-preview" aria-label="Body preview" hidden></div>
+    </div>
+
+    <div class="message-editor-field">
+      <p>Attachments</p>
+      <p data-no-attachments>No attachments</p>
+      <ul data-attachment-list hidden></ul>
+    </div>
+
+    <div class="viz-row">
+      <button type="submit" class="btn btn-primary">Submit edits to chat</button>
+      <span class="text-small" role="status"></span>
+    </div>
+  </form>
+</section>
+
+<style>
+  #outbound-message-editor form {
+    display: grid;
+    gap: calc(var(--font-size-base) * 0.9);
+  }
+
+  #outbound-message-editor .message-editor-field:not([hidden]) {
+    display: grid;
+    gap: calc(var(--font-size-base) * 0.25);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #outbound-message-editor ul {
+    margin: 0;
+  }
+
+  #outbound-message-preview.is-plain-text,
+  #outbound-message-preview pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+</style>
+
+<script type="application/json" id="outbound-message-draft">__OUTBOUND_MESSAGE_DRAFT__</script>
+<script src="https://cdn.jsdelivr.net/npm/markdown-it@15.0.3/dist/browser/markdown-it.umd.min.js"
+        integrity="sha384-ARStLecQmtLYjBgfD3+w+irhiSoLTnFk/ne6c0gRWQKQtC9791ZLMQ9D3OaBISt3"
+        crossorigin="anonymous"></script>
+<script>
+  (() => {
+    const draft = JSON.parse(document.getElementById('outbound-message-draft').textContent);
+    const editor = document.getElementById('outbound-message-editor');
+    const form = editor.querySelector('form');
+    const destination = form.elements.namedItem('destination');
+    const subject = form.elements.namedItem('subject');
+    const body = form.elements.namedItem('body');
+    const markdown = form.elements.namedItem('markdown');
+    const preview = document.getElementById('outbound-message-preview');
+    const togglePreview = form.querySelector('[data-toggle-preview]');
+    const submit = form.querySelector('button[type="submit"]');
+    const status = form.querySelector('[role="status"]');
+    const attachmentList = form.querySelector('[data-attachment-list]');
+    const markdownParser = typeof window.markdownit === 'function'
+      ? window.markdownit({ html: false, breaks: true, linkify: false }).disable('image')
+      : null;
+
+    form.querySelector('[data-destination-label]').textContent = draft.destinationLabel;
+    destination.value = draft.destination;
+    subject.value = draft.subject ?? '';
+    form.querySelector('[data-subject-field]').hidden = draft.subject === null;
+    body.value = draft.body;
+    markdown.checked = draft.bodyFormat === 'markdown';
+    form.querySelector('[data-no-attachments]').hidden = draft.attachments.length > 0;
+    attachmentList.hidden = draft.attachments.length === 0;
+
+    for (const attachment of draft.attachments) {
+      const item = document.createElement('li');
+      if (attachment.url) {
+        const link = document.createElement('a');
+        link.href = attachment.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = attachment.name;
+        item.append(link);
+      } else {
+        item.textContent = attachment.name;
+      }
+      attachmentList.append(item);
+    }
+
+    function updatePreview() {
+      const formatMarkdown = markdown.checked && markdownParser;
+      preview.classList.toggle('is-plain-text', !formatMarkdown);
+      if (formatMarkdown) {
+        preview.innerHTML = markdownParser.render(body.value);
+        for (const link of preview.querySelectorAll('a')) {
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+        }
+      } else {
+        preview.textContent = body.value;
+      }
+      status.textContent = markdown.checked && !markdownParser
+        ? 'Markdown preview is unavailable.'
+        : '';
+    }
+
+    togglePreview.addEventListener('click', () => {
+      const showPreview = preview.hidden;
+      preview.hidden = !showPreview;
+      body.hidden = showPreview;
+      togglePreview.textContent = showPreview ? 'Edit' : 'Preview';
+      togglePreview.setAttribute('aria-expanded', String(showPreview));
+      if (showPreview) {
+        updatePreview();
+      } else {
+        status.textContent = '';
+        body.focus();
+      }
+    });
+    markdown.addEventListener('change', () => {
+      if (!preview.hidden) updatePreview();
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (submit.disabled) return;
+
+      submit.disabled = true;
+      status.textContent = '';
+      const edits = {
+        draftId: draft.draftId,
+        destination: destination.value,
+        subject: draft.subject === null ? null : subject.value,
+        body: body.value,
+        bodyFormat: markdown.checked ? 'markdown' : 'plain',
+      };
+
+      try {
+        await window.openai.sendFollowUpMessage({
+          title: 'Submit edits to chat',
+          prompt: 'Here are the edited draft fields. Show the updated version for approval before sending.\n\n'
+            + JSON.stringify(edits, null, 2),
+        });
+      } catch {
+        status.textContent = 'Unable to submit edits. You can paste them into the chat.';
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  })();
+</script>

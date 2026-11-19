@@ -7,6 +7,7 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | Skill | Purpose | Status |
 | --- | --- | --- |
 | [Meeting Study Notes](meeting-study-notes/SKILL.md) | Detailed educational notes from lectures, exercises, seminars, and discussions, with staged reading and independent review | Experimental |
+| [Email Handling](email-handling/SKILL.md) | Mail search, previews, drafts, organization, and explicit approval before sending | Experimental |
 | [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
 
 ## Installation
@@ -49,6 +50,16 @@ node meeting-study-notes/scripts/check_extraction.js .tmp/session/segments/manif
 The agent creates extraction ledgers between these commands. Segmentation defaults to 9000 characters with preceding context and supports `--target-chars` and `--overlap-chars`. Use `--help` for exact options. The checker verifies structure and source quotations, not semantic completeness.
 
 The skill itself calls no paid transcription service and includes no speech-to-text engine. Agent usage and optional targeted source verification depend on the host's services, access, and pricing.
+
+## Email Handling
+
+Use an available mail MCP integration to search, read, preview attachments, organize messages, and prepare drafts. The skill asks which integration to use for each new mailbox-check request unless the user already selected one. Different integrations may access different accounts.
+
+Message text can be developed in chat. Sending requires a final preview and explicit approval through `functions.request_user_input_async` for that exact version. Editing the message requires renewed approval. If the approval form is unavailable, sending pauses. The optional inline editor uses the bundled Node.js helper and HTML template with the host's available visualization support; plain chat editing is the fallback. Mail and host integration availability determine which operations are supported.
+
+The helper uses Node.js built-ins without npm dependencies. Markdown preview loads pinned markdown-it from a CDN; without it, the editor shows plain text. The skill does not include mail credentials or call a mail service itself. Email language follows the user's request; repository instructions and default editor labels are English. Private messages, attachments, and rendered drafts stay outside this repository.
+
+Run the synthetic helper checks with `node tests/email-handling.cjs`. They generate test HTML under `.tmp/` without accessing a mailbox or sending messages.
 
 ## Meeting Video Frames
 
