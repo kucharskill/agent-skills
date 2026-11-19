@@ -16,7 +16,7 @@ Communicate and compose messages in the user's requested language. These English
 
 ### eM Client message links on Windows
 
-For an eM Client message, provide a native application link using this fixed recipe; do not rediscover the protocol or perform reverse engineering for each message:
+For an eM Client message on Windows, provide only a native `em-toast:` link using this recipe. Never include an eM Client HTTP or HTTPS link to a message or attachment, including as a second link or fallback.
 
 1. Reuse the message's `Message-ID` header if already returned. Otherwise call `get_email_data` for the selected `email_id` with `include_headers: ["Message-ID"]` and `include_body: "NONE"` if no body is needed.
 2. With the single nonempty header string as `messageId`, form the link exactly as this JavaScript expression specifies:
@@ -25,9 +25,9 @@ For an eM Client message, provide a native application link using this fixed rec
 'em-toast:handler=MailNotificationHandler&tag=mail-link&action=&item_id=' + encodeURIComponent(messageId)
 ```
 
-Preserve the complete header value, including angle brackets when present; percent-encode that value once, not the entire URL. Do not substitute `email_id`, a conversation ID, or a token from the HTTPS URL. Return a normal Markdown link labeled in the user's language, alongside the unchanged provider URL. This is straightforward formatting, not a reason to create a script file, launch a shell, inspect the registry, test the link, or open the application. If exact encoding needs a tool, one expression in an existing JavaScript runtime suffices.
+Preserve the complete header value, including angle brackets when present. Percent-encode that value exactly once and leave the URL template intact. Do not substitute `email_id`, a conversation ID, or a token from the provider URL. Return a normal Markdown link labeled in the user's language. This is straightforward formatting, not a reason to create a script file, launch a shell, inspect the registry, test the link, or open the application. If exact encoding needs a tool, one expression in an existing JavaScript runtime suffices.
 
-This recipe was verified with eM Client's registered `em-toast:` handler on Windows. The chat host may restrict custom-scheme clicks. Missing or ambiguous `Message-ID` headers mean use the original provider URL rather than guessing. Do not apply this recipe to attachments or to other mail integrations, and never replace `https:` with `em-toast:` in a provider URL. Open a link only when the user requests opening; constructing a link does not authorize notification actions, sending email, or read receipts.
+If `Message-ID` is missing or ambiguous, identify the message by subject, sender, and date and say that a native link is unavailable. For an eM Client attachment, give its name and link to the containing message, or link to the local file when a copy is available. Use the recipe only for eM Client message headers. Opening links, triggering notification actions or read receipts, and sending email require separate user authorization.
 
 ## Drafts and mailbox organization
 
