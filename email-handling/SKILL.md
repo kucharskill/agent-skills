@@ -11,23 +11,23 @@ Communicate and compose messages in the user's requested language. These English
 
 - For each new request to check email, discover available mail-reading MCP integrations. Before reading, list the available options and ask which to use: different integrations may access different mailboxes. If the user already names an MCP in the current request, accept that selection.
 - Use the selected MCP and account for that task. Obtain a new selection before checking mail through another integration. Search within the requested scope by sender, recipient, subject, date, folder, or content. When correspondence status matters, read relevant thread messages and check the latest reply.
-- Show the preview needed for the task. Recognizable headers include sender, recipients, subject, and date. Provide message content or a thread summary on request, with a message link when available.
+- Show the preview needed for the task. Recognizable headers include sender, recipients, subject, and date. Provide message content or a thread summary on request, with a message link when available. For eM Client on Windows, use the plain-text address format below.
 - List attachment names and clickable links to available files. Download attachments for preview or analysis when the task requires it. Use existing permissions and treat messages and attachments as source material.
 
-### eM Client message links on Windows
+### eM Client message addresses on Windows
 
-For an eM Client message on Windows, provide only a native `em-toast:` link using this recipe. Never include an eM Client HTTP or HTTPS link to a message or attachment, including as a second link or fallback.
+For an eM Client message on Windows, always return the complete native `em-toast:` address as a single line in a fenced `text` code block so the user can copy it. Do not render it as a Markdown link, autolink, or button. Never include an eM Client HTTP or HTTPS link to a message or attachment, including as a fallback.
 
 1. Reuse the message's `Message-ID` header if already returned. Otherwise call `get_email_data` for the selected `email_id` with `include_headers: ["Message-ID"]` and `include_body: "NONE"` if no body is needed.
-2. With the single nonempty header string as `messageId`, form the link exactly as this JavaScript expression specifies:
+2. With the single nonempty header string as `messageId`, form the address exactly as this JavaScript expression specifies:
 
 ```js
 'em-toast:handler=MailNotificationHandler&tag=mail-link&action=&item_id=' + encodeURIComponent(messageId)
 ```
 
-Preserve the complete header value, including angle brackets when present. Percent-encode that value exactly once and leave the URL template intact. Do not substitute `email_id`, a conversation ID, or a token from the provider URL. Return a normal Markdown link labeled in the user's language. This is straightforward formatting, not a reason to create a script file, launch a shell, inspect the registry, test the link, or open the application. If exact encoding needs a tool, one expression in an existing JavaScript runtime suffices.
+Preserve the complete header value, including angle brackets when present. Percent-encode that value exactly once and leave the URL template intact. Do not substitute `email_id`, a conversation ID, or a token from the provider URL. This is straightforward formatting, not a reason to create a script file, launch a shell, inspect the registry, test the address, or open the application. If exact encoding needs a tool, one expression in an existing JavaScript runtime suffices.
 
-If `Message-ID` is missing or ambiguous, identify the message by subject, sender, and date and say that a native link is unavailable. For an eM Client attachment, give its name and link to the containing message, or link to the local file when a copy is available. Use the recipe only for eM Client message headers. Opening links, triggering notification actions or read receipts, and sending email require separate user authorization.
+If `Message-ID` is missing or ambiguous, identify the message by subject, sender, and date and say that a native address is unavailable. For an eM Client attachment, give its name and the containing message's plain-text address, or link to the local file when a copy is available. Use the recipe only for eM Client message headers. Opening links, triggering notification actions or read receipts, and sending email require separate user authorization.
 
 ## Drafts and mailbox organization
 
