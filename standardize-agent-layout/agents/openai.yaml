@@ -1,0 +1,4 @@
+interface:
+  display_name: "Standardize Agent Layout"
+  short_description: "Unify project instructions and skill locations"
+  default_prompt: "Use $standardize-agent-layout to review and gradually standardize the agent instructions and skills in this project."

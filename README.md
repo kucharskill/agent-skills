@@ -9,6 +9,7 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | [Meeting Study Notes](meeting-study-notes/SKILL.md) | Detailed educational notes from lectures, exercises, seminars, and discussions, with staged reading and independent review | Experimental |
 | [Email Handling](email-handling/SKILL.md) | Mail search, previews, drafts, organization, and explicit approval before sending | Experimental |
 | [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
+| [Standardize Agent Layout](standardize-agent-layout/SKILL.md) | Set up and gradually migrate shared agent instructions and skills across coding clients | Experimental |
 
 ## Installation
 
