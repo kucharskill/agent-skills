@@ -4,7 +4,11 @@ Use this reference only for schedule configuration and heartbeat execution. Manu
 
 ## Schedule setup
 
-Use `automation_update`. Create or update a thread heartbeat, normally hourly, with failure-only notifications (`notificationPolicy: failed_runs_only` when supported). Preserve its ID and target chat when changing an existing schedule. The saved prompt should invoke `$restart-codex` in **scheduled-check mode**, reference this file, and state the two-page limit and quiet behavior. Do not copy the whole skill into the prompt.
+Use `automation_update`. Create or update a thread heartbeat, normally hourly, with failure-only notifications (`notificationPolicy: failed_runs_only` when supported). Preserve its ID and target chat when changing an existing schedule.
+
+**The configuring agent must save a self-contained runtime prompt.** Skill loading during setup does not guarantee skill loading when the timer fires. A skill name or reference-file path alone is insufficient. Explicitly save the two-page limit, active-work and idle-time conditions, target-chat selection, resolved helper command, and quiet chat-output rules. Keep app notification preferences in the automation setting; chat-output instructions belong in the saved task itself. Do not copy unrelated manual-mode or implementation guidance.
+
+Use the template below as the task's core, resolving its placeholders before saving. On a later policy or path change, update existing saved prompts too; editing this reference alone does not update installed schedules.
 
 ## Runtime decision
 
@@ -22,3 +26,19 @@ The decision is deliberately limited to at most 100 recent local chats. A cursor
 Normal skips, active work, recent activity, successful dispatch, and a successful previous restart produce **no chat update or progress commentary**. Use the host's non-notifying heartbeat result (`DONT_NOTIFY`) when a terminal heartbeat response is required. Put no user-facing prose outside it.
 
 Notify only about a concrete failure in this automation: a failed tool/dispatch, a failed scheduled restart log, or broken installation needed by the schedule. Include a short error and next action, without raw commands or credentials. A two-page cap or ordinary uncertainty is a normal skip, not a failure notification.
+
+## Self-contained saved-task template
+
+```text
+This is a scheduled idle check for Codex in ChatGPT Desktop on Windows, not a manual restart. All necessary runtime instructions are below; opening a skill file is not a prerequisite.
+
+Produce no ordinary chat reply or progress commentary for skips, active work, recent activity, successful dispatch, or successful prior restarts. If the host requires a heartbeat result, return only its non-notifying DONT_NOTIFY result with a minimal technical message. Write an error report only for a new concrete failure of this automation; never repeat old errors or report manual-test failures as schedule failures.
+
+Inspect a new latest restart log under system TEMP/codex-idle-restart only for its result/summary and matching AutomationId <AUTOMATION_ID>. Keep raw commands and credentials out of the chat.
+
+Use list_threads in history mode for source codex, host local, limit 50. Read at most two pages using the returned cursor; no third/final listing or exhaustive scan. Stop immediately if inspected chats contain another running turn, queued request, approval, or waiting-for-input task. Only the current maintenance turn is exempt. Unknown/incomplete evidence means skip. A remaining cursor beyond page two is an expected bounded-check limit, not an error.
+
+Require <IDLE_MINUTES> minutes since recent ordinary finished work. Use actual read_thread completedAt timestamps, normalizing seconds/milliseconds. This automation's own status-only checks do not reset that interval. Recent work or insufficient idle evidence means skip quietly.
+
+Choose the latest relevant local chat in the inspected scope, discounting maintenance updates. If eligible, execute Windows PowerShell with the installed script <ABSOLUTE_SCRIPT_PATH>, -ThreadId <CHOSEN_CHAT_UUID> -Execute -AutomationId <AUTOMATION_ID>. Use no ForceClose and leave the default TEMP log path. Then finish this turn promptly. A worker PID proves dispatch only, not restart success. The helper relaunches after the saved tree is empty, without a fixed 20-second pause. Do not kill processes or improvise another restart method if it fails.
+```

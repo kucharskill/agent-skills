@@ -25,7 +25,7 @@ Without `-Execute`, the helper only prints a process snapshot. Use that mode whe
 
 When the user asks to add recurring checks to a chat, read [references/scheduled-checks.md](references/scheduled-checks.md). That mode owns activity checks and notification policy. It does not change the manual mode into an idle-only restart.
 
-Use the app's automation tool to create or update a heartbeat attached to the requested chat. Preserve an existing automation instead of creating a duplicate. Default to hourly checks and the established 60-minute idle interval unless the user requests otherwise. Configure failure-only notifications. Do not create or enable a schedule merely because the user invoked a manual restart.
+Use the app's automation tool to create or update a heartbeat attached to the requested chat. Preserve an existing automation instead of creating a duplicate. Default to hourly checks and the established 60-minute idle interval unless the user requests otherwise. Configure failure-only notifications through the automation setting. **Write the runtime decision rules and quiet chat-output rules explicitly into the saved automation prompt.** Do not rely on the future run opening this skill or a reference file: the saved task must be operationally self-contained, including the helper's resolved path. Do not create or enable a schedule merely because the user invoked a manual restart.
 
 ## Helper behavior
 
