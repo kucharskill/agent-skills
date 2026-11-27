@@ -16,6 +16,44 @@ function Get-CreatedTicks($Process) {
     return $Process.CreationDate.ToUniversalTime().Ticks.ToString()
 }
 
+function Protect-CommandLine([string]$Command) {
+    if (!$Command) { return $null }
+    $flags = '(?i)(--?(?:mcp-secret|password|passwd|token|access-token|api-key|secret)(?:=|\s+))("[^"]*"|''[^'']*''|\S+)'
+    $value = [regex]::Replace($Command, $flags, '$1[REDACTED]')
+    $value = [regex]::Replace($value, '(?i)(\b(?:API_KEY|ACCESS_TOKEN|PASSWORD|SECRET)\s*=\s*)("[^"]*"|''[^'']*''|[^\s&]+)', '$1[REDACTED]')
+    return [regex]::Replace($value, '(?i)([?&](?:access_token|api_key|token|password)=)[^&#\s"'']+', '$1[REDACTED]')
+}
+
+function Get-ProcessDetails($Process) {
+    [pscustomobject]@{ Pid = [int]$Process.ProcessId; ParentPid = [int]$Process.ParentProcessId
+        Created = Get-CreatedTicks $Process; Name = $Process.Name
+        CommandLine = Protect-CommandLine $Process.CommandLine
+        WorkingSetBytes = $(if ($null -ne $Process.WorkingSetSize) { [long]$Process.WorkingSetSize } else { $null })
+        PrivateBytes = $(if ($null -ne $Process.PrivatePageCount) { [long]$Process.PrivatePageCount } else { $null }) }
+}
+
+function Get-MemoryTotals([object[]]$Records) {
+    $rows = @($Records | Where-Object { $null -ne $_ })
+    [pscustomobject]@{ Count = $rows.Count
+        WorkingSetBytes = [long](($rows | Measure-Object WorkingSetBytes -Sum).Sum)
+        PrivateBytes = [long](($rows | Measure-Object PrivateBytes -Sum).Sum)
+        MissingWorkingSet = @($rows | Where-Object { $null -eq $_.WorkingSetBytes }).Count
+        MissingPrivateBytes = @($rows | Where-Object { $null -eq $_.PrivateBytes }).Count }
+}
+
+function Get-DefaultLogPath {
+    return Join-Path ([System.IO.Path]::GetTempPath()) ('codex-idle-restart/restart-' + [datetime]::UtcNow.ToString('yyyyMMddTHHmmssZ') + '-' + [guid]::NewGuid().ToString() + '.jsonl')
+}
+
+function Get-SavedSurvivors($Plan) {
+    $live = @{}
+    foreach ($item in @(Get-CimInstance Win32_Process)) { $live[[int]$item.ProcessId] = $item }
+    foreach ($saved in $Plan.Tree) {
+        $item = $live[[int]$saved.Pid]
+        if ($item -and (Get-CreatedTicks $item) -eq $saved.Created) { Get-ProcessDetails $item }
+    }
+}
+
 function Get-SavedTree([object[]]$Processes, [int]$RootId) {
     $root = @($Processes | Where-Object { $_.ProcessId -eq $RootId })
     if ($root.Count -ne 1) { throw 'Expected one desktop root process.' }
@@ -27,8 +65,9 @@ function Get-SavedTree([object[]]$Processes, [int]$RootId) {
         $item = $entry.Process
         if ($seen.ContainsKey([int]$item.ProcessId)) { throw 'Invalid process-tree cycle.' }
         $seen[[int]$item.ProcessId] = $true
-        [pscustomobject]@{ Pid = [int]$item.ProcessId; ParentPid = [int]$item.ParentProcessId
-            Created = Get-CreatedTicks $item; Name = $item.Name; Depth = $entry.Depth }
+        $details = Get-ProcessDetails $item
+        $details | Add-Member NoteProperty Depth $entry.Depth
+        $details
         foreach ($child in @($Processes | Where-Object {
             $_.ParentProcessId -eq $item.ProcessId -and $_.CreationDate -ge $item.CreationDate
         })) { $queue.Enqueue(@{ Process = $child; Depth = $entry.Depth + 1 }) }
@@ -61,15 +100,19 @@ function Close-Desktop($Plan) {
 function Stop-SavedTree($Plan) {
     foreach ($saved in @($Plan.Tree | Where-Object { $_.Pid -ne $Plan.RootPid } | Sort-Object Depth -Descending)) {
         $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($saved.Pid)"
-        if (!$current) { continue }
-        if ((Get-CreatedTicks $current) -ne $saved.Created) { continue }
+        if (!$current) { Write-Event 'process_cleanup' @{ Action = 'already_exited'; Pid = $saved.Pid }; continue }
+        if ((Get-CreatedTicks $current) -ne $saved.Created) {
+            Write-Event 'process_cleanup' @{ Action = 'pid_reused'; Pid = $saved.Pid }; continue
+        }
         $handle = Get-Process -Id $saved.Pid -ErrorAction SilentlyContinue
-        if (!$handle) { continue }
+        if (!$handle) { Write-Event 'process_cleanup' @{ Action = 'already_exited'; Pid = $saved.Pid }; continue }
+        $details = Get-ProcessDetails $current
         # Keep the original process handle for waiting, even if its numeric PID is later reused.
         $null = $handle.Handle
         try { Stop-Process -InputObject $handle -Force -ErrorAction Stop }
         catch { if (!$handle.HasExited) { throw } }
         if (!$handle.WaitForExit(5000)) { throw "Process did not exit: $($saved.Pid)" }
+        Write-Event 'process_cleanup' @{ Action = 'terminated'; Process = $details }
     }
 }
 
@@ -85,10 +128,20 @@ function Start-Desktop($Plan) {
 function Invoke-RestartPlan($Plan) {
     Write-Event 'snapshot' $Plan
     Close-Desktop $Plan
-    Write-Event 'closed' $null
+    $remainingAfterClose = @(Get-SavedSurvivors $Plan)
+    Write-Event 'closed' @{ Survivors = $remainingAfterClose; Memory = Get-MemoryTotals $remainingAfterClose }
     try {
         Stop-SavedTree $Plan
-        Write-Event 'cleaned' $null
+        $remainingAfterCleanup = @(Get-SavedSurvivors $Plan)
+        $before = Get-MemoryTotals $Plan.Tree
+        $afterClose = Get-MemoryTotals $remainingAfterClose
+        $afterCleanup = Get-MemoryTotals $remainingAfterCleanup
+        Write-Event 'cleaned' @{ Before = $before; AfterClose = $afterClose; AfterCleanup = $afterCleanup
+            WorkingSetDecreaseBytes = $before.WorkingSetBytes - $afterCleanup.WorkingSetBytes
+            PrivateBytesDecreaseBytes = $before.PrivateBytes - $afterCleanup.PrivateBytes
+            CleanupWorkingSetDecreaseBytes = $afterClose.WorkingSetBytes - $afterCleanup.WorkingSetBytes
+            CleanupPrivateBytesDecreaseBytes = $afterClose.PrivateBytes - $afterCleanup.PrivateBytes
+            Note = 'Saved process identities only, before relaunch. Working sets share pages; differences are estimates, not measured net RAM savings.' }
     } catch {
         Write-Event 'cleanup_failed' @{ Message = $_.Exception.Message }
         # Restore the visible app after a partial cleanup failure, without claiming success.
@@ -122,7 +175,7 @@ function Invoke-Main {
         return
     }
     if (!$Execute) { $plan | ConvertTo-Json -Depth 6; return }
-    if (!$LogPath) { $script:LogPath = Join-Path (Get-Location).Path ('.tmp/codex-idle-restart/' + [guid]::NewGuid().ToString() + '.jsonl') }
+    if (!$LogPath) { $script:LogPath = Get-DefaultLogPath }
     $script:LogPath = [System.IO.Path]::GetFullPath($script:LogPath)
     $null = [System.IO.Directory]::CreateDirectory((Split-Path -Parent $script:LogPath))
     $powershell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
