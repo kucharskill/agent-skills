@@ -94,9 +94,19 @@ function Close-Desktop($Plan) {
     $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"
     if (!$current -or (Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root changed.' }
     $app = Get-Process -Id $Plan.RootPid
-    $accepted = $app.CloseMainWindow()
-    $timeout = $(if ($ForceClose) { 5000 } else { 30000 })
-    if ($accepted -and $app.WaitForExit($timeout)) { return }
+    $null = $app.Handle
+    $attempt = 0
+    # Two graceful requests: at the start and after 15 seconds. Allow 45 seconds total.
+    foreach ($waitMs in @(15000, 30000)) {
+        $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"
+        if (!$current) { return }
+        if ((Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root identity changed during graceful close.' }
+        $app.Refresh()
+        $accepted = $app.CloseMainWindow()
+        $attempt++
+        Write-Event 'graceful_close_request' @{ Pid = $Plan.RootPid; Attempt = $attempt; Accepted = $accepted; WaitMilliseconds = $waitMs }
+        if ($app.WaitForExit($waitMs)) { return }
+    }
     if (!$ForceClose) { throw 'Desktop close was cancelled or timed out.' }
     # Explicit opt-in only: close-to-tray can leave the desktop root running.
     $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"

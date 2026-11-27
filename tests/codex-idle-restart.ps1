@@ -122,3 +122,53 @@ $logged = Get-Content -LiteralPath $script:LogPath -Tail 1 | ConvertFrom-Json
 Assert-Equal $logged.Details.CommandLine 'node test.js --token [REDACTED]' 'JSONL log round-trips commands without common credential values'
 Assert-Equal $logged.Details.Memory.PrivateBytes ([long]10000) 'JSONL log preserves byte totals'
 Write-Output 'All restart tests passed. No real process was closed, killed, or launched.'
+
+# Verify graceful/forced close timing with a fake process; no actual waiting or termination.
+. (Join-Path $PSScriptRoot '../codex-idle-restart/scripts/restart-codex.ps1')
+function New-CloseCase([bool]$Force, [int]$ExitOnWait = 0, [bool]$Reuse = $false) {
+    $script:ForceClose = $Force
+    $script:closeRoot = Fixture 100 1 10
+    $script:closePlan = @{ RootPid = 100; RootCreated = Get-CreatedTicks $script:closeRoot }
+    $script:closeCalls = 0; $script:waitCalls = 0; $script:kills = 0
+    $script:waits = [System.Collections.Generic.List[int]]::new()
+    $script:requests = [System.Collections.Generic.List[object]]::new()
+    $script:exitOnWait = $ExitOnWait; $script:reuse = $Reuse
+    $script:fakeApp = [pscustomobject]@{ Id = 100; Handle = 1 }
+    $script:fakeApp | Add-Member ScriptMethod Refresh {}
+    $script:fakeApp | Add-Member ScriptMethod CloseMainWindow { $script:closeCalls++; return $true }
+    $script:fakeApp | Add-Member ScriptMethod WaitForExit {
+        param($Milliseconds)
+        $script:waits.Add($Milliseconds); $script:waitCalls++
+        return ($script:kills -gt 0 -or ($script:exitOnWait -gt 0 -and $script:waitCalls -eq $script:exitOnWait))
+    }
+}
+function Get-CimInstance {
+    param($ClassName,$Filter)
+    if ($script:reuse -and $script:closeCalls -gt 0) { return Fixture 100 1 50 }
+    return $script:closeRoot
+}
+function Get-Process { param($Id); return $script:fakeApp }
+function Stop-Process { param($InputObject,[switch]$Force,$ErrorAction); $script:kills++ }
+function Write-Event { param($Event,$Details); if ($Event -eq 'graceful_close_request') { $script:requests.Add($Details) } }
+
+New-CloseCase $true
+Close-Desktop $script:closePlan
+Assert-Equal @($script:waits.ToArray()) @(15000,30000,5000) 'forced close waits the full 45 seconds after two graceful requests'
+Assert-Equal $script:closeCalls 2 'two graceful close requests precede forced termination'
+Assert-Equal $script:kills 1 'explicit fallback terminates the root once'
+Assert-Equal @($script:requests.Attempt) @(1,2) 'both graceful attempts are logged'
+
+New-CloseCase $true 1
+Close-Desktop $script:closePlan
+Assert-Equal @($script:closeCalls,$script:kills) @(1,0) 'early graceful exit prevents a second request and forced termination'
+
+New-CloseCase $false
+try { Close-Desktop $script:closePlan; throw 'Expected timeout' }
+catch { if ($_.Exception.Message -notmatch 'cancelled or timed out') { throw } }
+Assert-Equal @($script:waits.ToArray()) @(15000,30000) 'ordinary mode also allows two requests and 45 seconds'
+Assert-Equal $script:kills 0 'ordinary timeout never force-kills the root'
+
+New-CloseCase $true 0 $true
+try { Close-Desktop $script:closePlan; throw 'Expected identity failure' }
+catch { if ($_.Exception.Message -notmatch 'identity changed') { throw } }
+Assert-Equal @($script:closeCalls,$script:kills) @(1,0) 'PID reuse prevents the second request and forced termination'

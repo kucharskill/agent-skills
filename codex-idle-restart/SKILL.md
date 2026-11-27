@@ -42,7 +42,7 @@ After eligibility is established, run:
 The command returns a worker PID and log path. Finish the maintenance turn promptly after dispatch; do not keep it active by polling the worker. The hidden worker is detached through WMI so it survives the app's shutdown. It waits briefly for the launching turn to finish, then performs exactly this sequence:
 
 1. Save the Codex root and complete descendant PID tree, including process creation times, command lines, working-set bytes, and private committed bytes, in the log.
-2. Ask the main window to close and wait up to 30 seconds for the root process to exit. A refusal, timeout, changed root, or inaccessible process stops the operation; do not force-kill the root to bypass it.
+2. Ask the main window to close, wait 15 seconds, and send a second graceful close request if the same process is still running. Then wait another 30 seconds, allowing 45 seconds total before any explicit forced-close fallback. Return immediately if the process exits earlier. Log both attempts and revalidate the process identity before each request. Without an explicit forced-close opt-in, a timeout stops the operation.
 3. Terminate remaining members of the saved descendant tree, deepest first. Verify PID plus creation time before each termination. A missing process is already cleaned up; a reused PID is skipped. Never kill processes globally by executable name.
 4. Wait **20 seconds after cleanup completes**.
 5. Relaunch the captured desktop executable with `codex://threads/<uuid>` to reopen the selected chat. Do not automatically send another prompt.
@@ -55,7 +55,7 @@ Report working-set decreases as estimates: shared pages can be counted more than
 
 A returned worker PID confirms dispatch, not successful restart. The worker records `launched` after process creation; it cannot verify that the UI actually opened the chat. Report that limitation accurately.
 
-For an explicitly authorized forced-close test, `-ForceClose` allows terminating the saved, revalidated desktop root if window closure has not ended it within five seconds. It records `root_force_close` and then follows normal saved-tree cleanup and the 20-second delay. Do not add this flag to routine scheduled runs without user authorization; ordinary window closure may only hide the app in the system tray.
+For an explicitly authorized forced-close test, `-ForceClose` allows terminating the saved, revalidated desktop root only after both graceful attempts and their full 45-second wait. It records `root_force_close` and then follows normal saved-tree cleanup and the 20-second delay. Do not add this flag to routine scheduled runs without user authorization; ordinary window closure may only hide the app in the system tray. Extra waiting gives application writes time to finish, but does not guarantee database safety when termination is forced.
 
 Cleanup is scoped to the saved tree, including tool-launched descendants. Already-orphaned processes outside that tree and children spawned after the snapshot are not identified. Do not expand cleanup to unrelated processes as a fallback. If cleanup fails after the app closed, the worker attempts to restore the application and records the failure; do not report a clean restart.
 
