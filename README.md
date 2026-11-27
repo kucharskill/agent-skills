@@ -10,6 +10,7 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | [Email Handling](email-handling/SKILL.md) | Mail search, previews, drafts, organization, and explicit approval before sending | Experimental |
 | [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
 | [Standardize Agent Layout](standardize-agent-layout/SKILL.md) | Set up and gradually migrate shared agent instructions and skills across coding clients | Experimental |
+| [Codex Idle Restart](codex-idle-restart/SKILL.md) | Check idle eligibility and restart the Windows Codex app with saved process-tree cleanup | Experimental |
 
 ## Installation
 
@@ -93,6 +94,19 @@ Fixtures stay under .tmp/; generated extraction artifacts use the OS temporary d
 ## Scope and limitations
 
 This is an experimental workflow, not a guarantee that every detail is preserved. Transcript errors may require verification against supplied materials or primary sources. Review of a transcript does not establish accuracy against the original recording.
+
+## Codex Idle Restart
+
+Use `$codex-idle-restart` for an authorized Windows desktop restart after checking all relevant chats for active work and at least one hour since the latest finished turn. Only the current maintenance turn is exempt. The agent owns these decisions; a standalone Windows PowerShell script performs the restart without Node or extra packages.
+
+The script is a dry run unless `-Execute` is supplied. Its detached worker snapshots PID plus creation-time identities, requests app closure, terminates remaining saved descendants, waits 20 seconds, and relaunches Codex with the selected local chat's deep link. It does not scan or kill unrelated processes by name. The next maintenance run can inspect the result log in the invoking project's `.tmp/codex-idle-restart/` directory. App launch is recorded, but successful UI navigation is not verified.
+
+```powershell
+& ./codex-idle-restart/scripts/restart-codex.ps1 -ThreadId '<local-chat-uuid>'
+& ./tests/codex-idle-restart.ps1
+```
+
+Activity checking requires Codex app tools. There is no atomic lock against new work arriving after the final check. Cleanup covers the saved process tree, not already-orphaned processes outside it. An unknown app layout, failed close, or incomplete activity evidence stops the workflow.
 
 ## License
 
