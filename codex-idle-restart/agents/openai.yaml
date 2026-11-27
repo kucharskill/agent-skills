@@ -1,4 +1,0 @@
-interface:
-  display_name: "Codex Idle Restart"
-  short_description: "Restart idle Codex and clean up its process tree"
-  default_prompt: "Use $codex-idle-restart to check active chats and recent completed work before an authorized Codex restart."

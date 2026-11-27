@@ -5,6 +5,7 @@ param(
     [string]$ThreadId,
     [switch]$Execute,
     [switch]$ForceClose,
+    [ValidatePattern('^[a-z0-9][a-z0-9-]{0,79}$')][string]$AutomationId,
     [ValidateRange(0,60)][int]$DispatchDelaySeconds = 5,
     [string]$LogPath,
     [switch]$Worker,
@@ -85,7 +86,8 @@ function Find-Desktop([object[]]$Processes) {
 }
 
 function Write-Event([string]$Event, $Details) {
-    $record = @{ Time = [datetime]::UtcNow.ToString('o'); Event = $Event; Details = $Details }
+    $record = @{ Time = [datetime]::UtcNow.ToString('o'); Event = $Event; Details = $Details
+        AutomationId = $AutomationId; Mode = $(if ($AutomationId) { 'scheduled' } else { 'manual' }) }
     $line = ConvertTo-Json -InputObject $record -Depth 7 -Compress
     [System.IO.File]::AppendAllText($script:LogPath, $line + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 }
@@ -172,7 +174,16 @@ function Close-Desktop($Plan) {
 }
 
 function Stop-SavedTree($Plan) {
+    # One bulk read avoids a CIM round trip for every already-exited descendant.
+    $live = @{}
+    foreach ($item in @(Get-CimInstance Win32_Process)) { $live[[int]$item.ProcessId] = $item }
     foreach ($saved in @($Plan.Tree | Where-Object { $_.Pid -ne $Plan.RootPid } | Sort-Object Depth -Descending)) {
+        $current = $live[[int]$saved.Pid]
+        if (!$current) { Write-Event 'process_cleanup' @{ Action = 'already_exited'; Pid = $saved.Pid }; continue }
+        if ((Get-CreatedTicks $current) -ne $saved.Created) {
+            Write-Event 'process_cleanup' @{ Action = 'pid_reused'; Pid = $saved.Pid }; continue
+        }
+        # Revalidate only live candidates immediately before a possible termination.
         $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($saved.Pid)"
         if (!$current) { Write-Event 'process_cleanup' @{ Action = 'already_exited'; Pid = $saved.Pid }; continue }
         if ((Get-CreatedTicks $current) -ne $saved.Created) {
@@ -207,6 +218,10 @@ function Invoke-RestartPlan($Plan) {
     try {
         Stop-SavedTree $Plan
         $remainingAfterCleanup = @(Get-SavedSurvivors $Plan)
+        if ($remainingAfterCleanup.Count) {
+            Write-Event 'cleanup_incomplete' @{ Pids = @($remainingAfterCleanup.Pid) }
+            throw 'Saved process identities are still running; relaunch blocked.'
+        }
         $before = Get-MemoryTotals $Plan.Tree
         $afterClose = Get-MemoryTotals $remainingAfterClose
         $afterCleanup = Get-MemoryTotals $remainingAfterCleanup
@@ -218,12 +233,8 @@ function Invoke-RestartPlan($Plan) {
             Note = 'Saved process identities only, before relaunch. Working sets share pages; differences are estimates, not measured net RAM savings.' }
     } catch {
         Write-Event 'cleanup_failed' @{ Message = $_.Exception.Message }
-        # Restore the visible app after a partial cleanup failure, without claiming success.
-        Start-Sleep -Seconds 20
-        Start-Desktop $Plan
         throw
     }
-    Start-Sleep -Seconds 20
     Start-Desktop $Plan
     Write-Event 'launched' @{ ThreadId = $Plan.ThreadId }
 }
@@ -270,6 +281,7 @@ function Invoke-Main {
         ' -ExpectedCreated ' + $plan.RootCreated + ' -DispatchDelaySeconds ' + $DispatchDelaySeconds +
         ' -LogPath "' + $script:LogPath + '"'
     if ($ForceClose) { $command += ' -ForceClose' }
+    if ($AutomationId) { $command += ' -AutomationId ' + $AutomationId }
     $startup = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ ShowWindow = [uint16]0 }
     $result = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
         CommandLine = $command; CurrentDirectory = (Get-Location).Path; ProcessStartupInformation = $startup

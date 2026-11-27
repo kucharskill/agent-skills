@@ -10,7 +10,7 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | [Email Handling](email-handling/SKILL.md) | Mail search, previews, drafts, organization, and explicit approval before sending | Experimental |
 | [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
 | [Standardize Agent Layout](standardize-agent-layout/SKILL.md) | Set up and gradually migrate shared agent instructions and skills across coding clients | Experimental |
-| [Codex Idle Restart](codex-idle-restart/SKILL.md) | Check idle eligibility and restart the Windows Codex app with saved process-tree cleanup | Experimental |
+| [Restart Codex (ChatGPT Desktop)](restart-codex/SKILL.md) | Immediate manual restart or quiet bounded scheduled checks for ChatGPT Desktop on Windows | Experimental |
 
 ## Installation
 
@@ -95,20 +95,20 @@ Fixtures stay under .tmp/; generated extraction artifacts use the OS temporary d
 
 This is an experimental workflow, not a guarantee that every detail is preserved. Transcript errors may require verification against supplied materials or primary sources. Review of a transcript does not establish accuracy against the original recording.
 
-## Codex Idle Restart
+## Restart Codex (ChatGPT Desktop)
 
-Use `$codex-idle-restart` for an authorized Windows desktop restart after checking all relevant chats for active work and at least one hour since the latest finished turn. Only the current maintenance turn is exempt. The agent owns these decisions; a standalone Windows PowerShell script performs the restart without Node or extra packages.
+Use `$restart-codex` to restart Codex in **ChatGPT Desktop for Windows** immediately. Manual mode dispatches the PowerShell helper without chat pagination or an idle-time requirement. It reopens the selected chat without sending another prompt.
 
-The script is a dry run unless `-Execute` is supplied. Its detached worker snapshots PID plus creation-time identities, restores a tray-only window and requests real Quit through Ctrl+Q, terminates remaining saved descendants, waits 20 seconds, and relaunches Codex with the local chat UUID passed through `-ThreadId`. It does not scan or kill unrelated processes by name. Actual restart attempts write JSONL logs under the system TEMP directory in `codex-idle-restart/`; dry runs and skipped checks create no logs. Logs include redacted commands, working sets, private committed bytes, post-close survivors, per-process cleanup outcomes, and saved-tree memory decreases before relaunch. These are estimates, not net physical RAM savings. App launch is recorded, but successful UI navigation is not verified.
+The separate scheduled-check mode configures or updates a thread heartbeat. It checks at most two pages of local chats, retains the configured idle interval, and stays quiet for skips and successful restarts. Chat notifications are reserved for failures of that automation. Read [scheduled checks](restart-codex/references/scheduled-checks.md) for the bounded policy.
 
-Stop checking as soon as a definite blocker is confirmed. Full chat coverage is required only before approving a restart, not to justify skipping one.
+The helper restores a tray-only window, invokes real Quit through the verified Ctrl+Q accelerator, and cleans up saved process identities using a bulk snapshot and per-candidate identity checks. It launches the new app as soon as the saved tree is confirmed empty, without a fixed 20-second delay. An explicit forced-close fallback still waits through two graceful requests and 45 seconds.
+
+Only actual restart attempts write local JSONL logs under the system TEMP directory in `codex-idle-restart/`, retained for compatibility. They include commands with common credential values redacted, cleanup results, memory estimates, and an optional automation ID. Dry runs and skipped checks create no logs. The log records process launch, not verified UI navigation or exact net RAM savings.
 
 ```powershell
-& ./codex-idle-restart/scripts/restart-codex.ps1 -ThreadId '<local-chat-uuid>'
-& ./tests/codex-idle-restart.ps1
+& ./restart-codex/scripts/restart-codex.ps1 -ThreadId '<local-chat-uuid>'
+& ./tests/restart-codex.ps1
 ```
-
-Activity checking requires Codex app tools. There is no atomic lock against new work arriving after the final check. Cleanup covers the saved process tree, not already-orphaned processes outside it. An unknown app layout, failed close, or incomplete activity evidence stops the workflow.
 
 ## License
 

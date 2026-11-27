@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot '../codex-idle-restart/scripts/restart-codex.ps1')
+. (Join-Path $PSScriptRoot '../restart-codex/scripts/restart-codex.ps1')
 
 function Assert-Equal($Actual, $Expected, [string]$Label) {
     if (($Actual | ConvertTo-Json -Compress -Depth 8) -ne ($Expected | ConvertTo-Json -Compress -Depth 8)) {
@@ -33,10 +33,12 @@ Write-Output 'PASS: missing root is rejected'
 $script:live = @{ 101 = $processes[1]; 102 = (Fixture 102 100 50); 103 = $processes[3] }
 $script:stopped = [System.Collections.Generic.List[int]]::new()
 $script:cleanupEvents = [System.Collections.Generic.List[object]]::new()
+$script:bulkQueries = 0; $script:filteredQueries = 0
 function Write-Event { param($Event,$Details); $script:cleanupEvents.Add($Details) }
 function Get-CimInstance {
     param($ClassName,$Filter)
-    if (!$Filter) { return @($script:live.Values) }
+    if (!$Filter) { $script:bulkQueries++; return @($script:live.Values) }
+    $script:filteredQueries++
     return $script:live[[int]($Filter -replace 'ProcessId=','')]
 }
 function Get-Process {
@@ -48,10 +50,14 @@ function Get-Process {
 function Stop-Process { param($InputObject,[switch]$Force,$ErrorAction); $script:stopped.Add($InputObject.Id) }
 $plan = [pscustomobject]@{ RootPid = 100; Tree = $tree; ThreadId = '00000000-0000-0000-0000-000000000001' }
 Stop-SavedTree $plan
+Assert-Equal @($script:bulkQueries,$script:filteredQueries) @(1,2) 'cleanup uses one bulk query and revalidates only the two live candidates'
 Assert-Equal @($script:stopped.ToArray()) @(103,101) 'cleanup is child-first and skips exited processes, reused PIDs, root, and unrelated processes'
 Assert-Equal @($script:cleanupEvents | Where-Object Action -eq 'terminated' | ForEach-Object { $_.Process.Pid }) @(103,101) 'cleanup log identifies forced terminations'
 Assert-Equal @($script:cleanupEvents | Where-Object Action -eq 'pid_reused' | ForEach-Object { $_.Pid }) @(102) 'cleanup log identifies reused PIDs'
 Assert-Equal @((Get-SavedSurvivors $plan).Pid | Sort-Object) @(101,103) 'survivor measurements match process identity, not just PID'
+$script:live = @{}; $script:bulkQueries = 0; $script:filteredQueries = 0; $script:stopped.Clear()
+Stop-SavedTree $plan
+Assert-Equal @($script:bulkQueries,$script:filteredQueries,$script:stopped.Count) @(1,0,0) 'already-exited trees need one bulk read, no per-PID queries and no kills'
 Remove-Item Function:Get-CimInstance,Function:Get-Process,Function:Stop-Process
 
 $script:events = [System.Collections.Generic.List[string]]::new()
@@ -69,7 +75,7 @@ function Get-SavedSurvivors {
     return @()
 }
 Invoke-RestartPlan $plan
-Assert-Equal @($script:events.ToArray()) @('log:snapshot','close','log:closed','kill-tree','log:cleaned','delay:20','launch','log:launched') 'snapshot, close, cleanup, 20-second delay, launch occur in the requested order'
+Assert-Equal @($script:events.ToArray()) @('log:snapshot','close','log:closed','kill-tree','log:cleaned','launch','log:launched') 'snapshot, close and verified cleanup are followed by immediate relaunch without a fixed delay'
 Assert-Equal $script:eventDetails.cleaned.WorkingSetDecreaseBytes ([long]5000) 'log reports saved-tree memory decrease before relaunch'
 Assert-Equal $script:eventDetails.cleaned.CleanupWorkingSetDecreaseBytes ([long]200) 'log separates remaining-process cleanup from normal desktop closure'
 Assert-Equal $script:eventDetails.cleaned.AfterCleanup.Count 0 'log records no remaining saved process identities'
@@ -85,10 +91,17 @@ function Close-Desktop { param($Plan); $script:events.Add('close') }
 function Stop-SavedTree { param($Plan); throw 'access denied' }
 try { Invoke-RestartPlan $plan; throw 'Expected cleanup failure' }
 catch { if ($_.Exception.Message -ne 'access denied') { throw } }
-Assert-Equal @($script:events.ToArray()) @('log:snapshot','close','log:closed','log:cleanup_failed','delay:20','launch') 'cleanup failure restores the app after 20 seconds without claiming a clean restart'
+Assert-Equal @($script:events.ToArray()) @('log:snapshot','close','log:closed','log:cleanup_failed') 'cleanup failure blocks relaunch'
+
+$script:events.Clear()
+function Stop-SavedTree { param($Plan); $script:events.Add('kill-tree') }
+function Get-SavedSurvivors { param($Plan); return [pscustomobject]@{Pid=101;WorkingSetBytes=200;PrivateBytes=400} }
+try { Invoke-RestartPlan $plan; throw 'Expected survivor barrier' }
+catch { if ($_.Exception.Message -notmatch 'still running') { throw } }
+Assert-Equal @($script:events.ToArray()) @('log:snapshot','close','log:closed','kill-tree','log:cleanup_incomplete','log:cleanup_failed') 'a failed empty-tree verification prevents launching a new desktop instance'
 
 # Exercise dispatch with mocked WMI, without creating any worker.
-. (Join-Path $PSScriptRoot '../codex-idle-restart/scripts/restart-codex.ps1')
+. (Join-Path $PSScriptRoot '../restart-codex/scripts/restart-codex.ps1')
 $fixtureRoot = Fixture 100 1 10
 $fixtureRoot.Name = 'ChatGPT.exe'
 $fixtureRoot | Add-Member NoteProperty ExecutablePath 'C:\Program Files\WindowsApps\OpenAI.Codex_TEST\app\ChatGPT.exe'
@@ -121,10 +134,17 @@ Write-Event 'synthetic_test' @{ CommandLine = Protect-CommandLine 'node test.js 
 $logged = Get-Content -LiteralPath $script:LogPath -Tail 1 | ConvertFrom-Json
 Assert-Equal $logged.Details.CommandLine 'node test.js --token [REDACTED]' 'JSONL log round-trips commands without common credential values'
 Assert-Equal $logged.Details.Memory.PrivateBytes ([long]10000) 'JSONL log preserves byte totals'
+$script:AutomationId = 'scheduled-restart-test'
+$null = Invoke-Main
+if ($script:dispatch.CommandLine -notmatch '-AutomationId scheduled-restart-test') { throw 'Scheduled origin missing from worker dispatch.' }
+Write-Event 'synthetic_scheduled_test' @{}
+$scheduled = Get-Content -LiteralPath $script:LogPath -Tail 1 | ConvertFrom-Json
+Assert-Equal $scheduled.AutomationId 'scheduled-restart-test' 'scheduled logs identify their owning automation'
+Assert-Equal $scheduled.Mode 'scheduled' 'scheduled failures can be distinguished from manual restart tests'
 Write-Output 'All restart tests passed. No real process was closed, killed, or launched.'
 
 # Verify graceful/forced close timing with a fake process; no actual waiting or termination.
-. (Join-Path $PSScriptRoot '../codex-idle-restart/scripts/restart-codex.ps1')
+. (Join-Path $PSScriptRoot '../restart-codex/scripts/restart-codex.ps1')
 $requestQuitImplementation = ${function:Request-DesktopQuit}
 function New-CloseCase([bool]$Force, [int]$ExitOnWait = 0, [bool]$Reuse = $false) {
     $script:ForceClose = $Force
