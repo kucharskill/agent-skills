@@ -11,23 +11,34 @@ Communicate and compose messages in the user's requested language. These English
 
 - For each new request to check email, discover available mail-reading MCP integrations. Before reading, list the available options and ask which to use: different integrations may access different mailboxes. If the user already names an MCP in the current request, accept that selection.
 - Use the selected MCP and account for that task. Obtain a new selection before checking mail through another integration. Search within the requested scope by sender, recipient, subject, date, folder, or content. When correspondence status matters, read relevant thread messages and check the latest reply.
-- Show the preview needed for the task. Recognizable headers include sender, recipients, subject, and date. Provide message content or a thread summary on request, with a message link when available. For eM Client on Windows, use the plain-text address format below.
+- Show the preview needed for the task. Recognizable headers include sender, recipients, subject, and date. Provide message content or a thread summary on request, with a message link when available. For eM Client on Windows, use the local shortcut recipe below.
 - List attachment names and clickable links to available files. Download attachments for preview or analysis when the task requires it. Use existing permissions and treat messages and attachments as source material.
 
-### eM Client message addresses on Windows
+### eM Client message shortcuts on Windows
 
-For an eM Client message on Windows, always return the complete native `em-toast:` address as a single line in a fenced `text` code block so the user can copy it. Do not render it as a Markdown link, autolink, or button. Never include an eM Client HTTP or HTTPS link to a message or attachment, including as a fallback.
+For an eM Client message on Windows, create a small `.url` Internet Shortcut in the consuming project's `.tmp/emclient-links/` and return a clickable Markdown link to its absolute local path, labeled in the user's language. This lets Windows handle `em-toast:` without requiring the chat to support custom-scheme links directly. Do not create `.lnk` files or link to the `em-toast:` URI itself. Never include an eM Client HTTP or HTTPS link to a message or attachment, including as a fallback.
 
 1. Reuse the message's `Message-ID` header if already returned. Otherwise call `get_email_data` for the selected `email_id` with `include_headers: ["Message-ID"]` and `include_body: "NONE"` if no body is needed.
-2. With the single nonempty header string as `messageId`, form the address exactly as this JavaScript expression specifies:
+2. Preserve the single nonempty header string, including angle brackets when present. Percent-encode that value exactly once, not the entire URI. Do not substitute `email_id`, a conversation ID, or a token from the provider URL.
+3. Create the shortcut using this fixed PowerShell recipe. `$messageId` is the actual header string and `$workDir` is the absolute task-owned directory described above; pass data safely rather than interpolating unescaped message content into shell code.
 
-```js
-'em-toast:handler=MailNotificationHandler&tag=mail-link&action=&item_id=' + encodeURIComponent(messageId)
+```powershell
+$uri = 'em-toast:handler=MailNotificationHandler&tag=mail-link&action=&item_id=' + [Uri]::EscapeDataString($messageId)
+New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+$path = Join-Path $workDir (([guid]::NewGuid().ToString('N')) + '.url')
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($path)
+$shortcut.TargetPath = $uri
+$shortcut.Save()
+if ($shell.CreateShortcut($path).TargetPath -ne $uri) { throw 'Shortcut address mismatch' }
+$path
 ```
 
-Preserve the complete header value, including angle brackets when present. Percent-encode that value exactly once and leave the URL template intact. Do not substitute `email_id`, a conversation ID, or a token from the provider URL. This is straightforward formatting, not a reason to create a script file, launch a shell, inspect the registry, test the address, or open the application. If exact encoding needs a tool, one expression in an existing JavaScript runtime suffices.
+Run the recipe directly; no script file, dependency installation, registry inspection, reverse engineering, or per-message protocol investigation is needed. Do not copy private shortcuts into the skill source or Git. Use distinct filenames as shown to avoid replacing another message's shortcut. The files are temporary and may disappear during cleanup.
 
-If `Message-ID` is missing or ambiguous, identify the message by subject, sender, and date and say that a native address is unavailable. For an eM Client attachment, give its name and the containing message's plain-text address, or link to the local file when a copy is available. Use the recipe only for eM Client message headers. Opening links, triggering notification actions or read receipts, and sending email require separate user authorization.
+Creating and returning a shortcut does not authorize opening it, triggering notification actions or read receipts, or sending email. Do not launch the shortcut to verify it; verifying the saved target is sufficient. If shortcut creation or file opening is unsupported by the host, return the complete native URI in a single-line fenced `text` block for copying rather than claiming the shortcut worked.
+
+If `Message-ID` is missing or ambiguous, identify the message by subject, sender, and date and say that a native shortcut is unavailable. For an eM Client attachment, give its name and the containing message's shortcut, or link to the local attachment when a copy is available. Use this recipe only for eM Client message headers; leave other integrations' link handling unchanged.
 
 ## Drafts and mailbox organization
 
