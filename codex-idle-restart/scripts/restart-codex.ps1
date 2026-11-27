@@ -90,21 +90,73 @@ function Write-Event([string]$Event, $Details) {
     [System.IO.File]::AppendAllText($script:LogPath, $line + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 }
 
+function Focus-DesktopForQuit($App) {
+    $window = $App.MainWindowHandle
+    if ($window -eq [IntPtr]::Zero) { return $false }
+    if (!('CodexQuitNative' -as [type])) {
+        Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class CodexQuitNative {
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int command);
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint processId);
+}
+'@
+    }
+    $null = [CodexQuitNative]::ShowWindow($window, 9)
+    $null = [CodexQuitNative]::SetForegroundWindow($window)
+    $foreground = [CodexQuitNative]::GetForegroundWindow()
+    [uint32]$foregroundPid = 0
+    $null = [CodexQuitNative]::GetWindowThreadProcessId($foreground, [ref]$foregroundPid)
+    return $foregroundPid -eq $App.Id
+}
+
+function Send-DesktopQuitShortcut {
+    $shell = New-Object -ComObject WScript.Shell
+    try { $shell.SendKeys('^q') }
+    finally { $null = [System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+}
+
+function Request-DesktopQuit($App) {
+    # The installed Windows app binds Ctrl+Q to Electron's real Quit command.
+    if (!(Focus-DesktopForQuit $App)) { return $false }
+    Send-DesktopQuitShortcut
+    return $true
+}
+
+function Restore-DesktopWindow($Desktop, [string]$Uri) {
+    $app = Get-Process -Id $Desktop.ProcessId
+    if ($app.MainWindowHandle -ne [IntPtr]::Zero) { return }
+    # Normal single-instance activation restores a tray-only app, without closing it.
+    Write-Event 'window_restore_requested' @{ Pid = $Desktop.ProcessId }
+    Start-Process -FilePath $Desktop.ExecutablePath -ArgumentList $Uri
+    for ($attempt = 0; $attempt -lt 25; $attempt++) {
+        $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Desktop.ProcessId)"
+        if (!$current -or (Get-CreatedTicks $current) -ne (Get-CreatedTicks $Desktop)) { throw 'Desktop changed while restoring its window.' }
+        $app.Refresh()
+        if ($app.MainWindowHandle -ne [IntPtr]::Zero) { return }
+        Start-Sleep -Milliseconds 200
+    }
+    throw 'The desktop window could not be restored from the tray.'
+}
+
 function Close-Desktop($Plan) {
     $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"
     if (!$current -or (Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root changed.' }
     $app = Get-Process -Id $Plan.RootPid
     $null = $app.Handle
     $attempt = 0
-    # Two graceful requests: at the start and after 15 seconds. Allow 45 seconds total.
+    # Two real Quit requests: at the start and after 15 seconds. Allow 45 seconds total.
     foreach ($waitMs in @(15000, 30000)) {
         $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"
         if (!$current) { return }
         if ((Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root identity changed during graceful close.' }
         $app.Refresh()
-        $accepted = $app.CloseMainWindow()
+        $accepted = Request-DesktopQuit $app
         $attempt++
-        Write-Event 'graceful_close_request' @{ Pid = $Plan.RootPid; Attempt = $attempt; Accepted = $accepted; WaitMilliseconds = $waitMs }
+        Write-Event 'graceful_close_request' @{ Pid = $Plan.RootPid; Attempt = $attempt; Accepted = $accepted; Method = 'Ctrl+Q'; WaitMilliseconds = $waitMs }
         if ($app.WaitForExit($waitMs)) { return }
     }
     if (!$ForceClose) { throw 'Desktop close was cancelled or timed out.' }
@@ -185,6 +237,15 @@ function Invoke-Main {
     $desktop = Find-Desktop $all
     if ($Worker -and ($desktop.ProcessId -ne $DesktopPid -or (Get-CreatedTicks $desktop) -ne $ExpectedCreated.ToString())) {
         throw 'Desktop was replaced before the worker started.'
+    }
+    if ($Worker) {
+        Restore-DesktopWindow $desktop "codex://threads/$ThreadId"
+        # Activation may create renderers. Include them before saving the tree.
+        $all = @(Get-CimInstance Win32_Process)
+        $desktop = Find-Desktop $all
+        if ($desktop.ProcessId -ne $DesktopPid -or (Get-CreatedTicks $desktop) -ne $ExpectedCreated.ToString()) {
+            throw 'Desktop was replaced during window activation.'
+        }
     }
     $tree = @(Get-SavedTree $all $desktop.ProcessId)
     $plan = [pscustomobject]@{ RootPid = [int]$desktop.ProcessId; RootCreated = Get-CreatedTicks $desktop

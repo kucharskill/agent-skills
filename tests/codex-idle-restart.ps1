@@ -125,6 +125,7 @@ Write-Output 'All restart tests passed. No real process was closed, killed, or l
 
 # Verify graceful/forced close timing with a fake process; no actual waiting or termination.
 . (Join-Path $PSScriptRoot '../codex-idle-restart/scripts/restart-codex.ps1')
+$requestQuitImplementation = ${function:Request-DesktopQuit}
 function New-CloseCase([bool]$Force, [int]$ExitOnWait = 0, [bool]$Reuse = $false) {
     $script:ForceClose = $Force
     $script:closeRoot = Fixture 100 1 10
@@ -148,6 +149,7 @@ function Get-CimInstance {
     return $script:closeRoot
 }
 function Get-Process { param($Id); return $script:fakeApp }
+function Request-DesktopQuit { param($App); $script:closeCalls++; return $true }
 function Stop-Process { param($InputObject,[switch]$Force,$ErrorAction); $script:kills++ }
 function Write-Event { param($Event,$Details); if ($Event -eq 'graceful_close_request') { $script:requests.Add($Details) } }
 
@@ -172,3 +174,26 @@ New-CloseCase $true 0 $true
 try { Close-Desktop $script:closePlan; throw 'Expected identity failure' }
 catch { if ($_.Exception.Message -notmatch 'identity changed') { throw } }
 Assert-Equal @($script:closeCalls,$script:kills) @(1,0) 'PID reuse prevents the second request and forced termination'
+
+# Verify keyboard routing without sending actual input.
+${function:Request-DesktopQuit} = $requestQuitImplementation
+$script:focusAllowed = $false; $script:keyCalls = 0
+function Focus-DesktopForQuit { param($App); return $script:focusAllowed }
+function Send-DesktopQuitShortcut { $script:keyCalls++ }
+Assert-Equal (Request-DesktopQuit $script:fakeApp) $false 'Quit sends no keys when the target foreground cannot be verified'
+Assert-Equal $script:keyCalls 0 'foreground refusal cannot send Ctrl+Q to another app'
+$script:focusAllowed = $true
+Assert-Equal (Request-DesktopQuit $script:fakeApp) $true 'Quit accepts a verified target window'
+Assert-Equal $script:keyCalls 1 'verified Quit dispatch sends the accelerator once'
+
+# Tray activation happens before snapshotting, without a real process launch.
+New-CloseCase $false
+$script:fakeApp | Add-Member NoteProperty MainWindowHandle ([IntPtr]123)
+$script:activations = 0
+function Start-Process { param($FilePath,$ArgumentList); $script:activations++; $script:activationUri = $ArgumentList; $script:fakeApp.MainWindowHandle = [IntPtr]123 }
+Restore-DesktopWindow $fixtureRoot 'codex://threads/00000000-0000-0000-0000-000000000001'
+Assert-Equal $script:activations 0 'visible Codex does not need a second activation'
+$script:fakeApp.MainWindowHandle = [IntPtr]::Zero
+Restore-DesktopWindow $fixtureRoot 'codex://threads/00000000-0000-0000-0000-000000000001'
+Assert-Equal $script:activations 1 'tray-only Codex is restored through single-instance activation'
+Assert-Equal $script:activationUri 'codex://threads/00000000-0000-0000-0000-000000000001' 'tray restoration forwards the selected chat UUID'
