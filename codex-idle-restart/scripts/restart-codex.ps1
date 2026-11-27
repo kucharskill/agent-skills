@@ -4,6 +4,7 @@ param(
     [ValidatePattern('^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$')]
     [string]$ThreadId,
     [switch]$Execute,
+    [switch]$ForceClose,
     [ValidateRange(0,60)][int]$DispatchDelaySeconds = 5,
     [string]$LogPath,
     [switch]$Worker,
@@ -93,8 +94,17 @@ function Close-Desktop($Plan) {
     $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"
     if (!$current -or (Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root changed.' }
     $app = Get-Process -Id $Plan.RootPid
-    if (!$app.CloseMainWindow()) { throw 'The desktop did not accept a close request.' }
-    if (!$app.WaitForExit(30000)) { throw 'Desktop close was cancelled or timed out.' }
+    $accepted = $app.CloseMainWindow()
+    $timeout = $(if ($ForceClose) { 5000 } else { 30000 })
+    if ($accepted -and $app.WaitForExit($timeout)) { return }
+    if (!$ForceClose) { throw 'Desktop close was cancelled or timed out.' }
+    # Explicit opt-in only: close-to-tray can leave the desktop root running.
+    $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($Plan.RootPid)"
+    if (!$current) { return }
+    if ((Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root identity changed; refusing forced close.' }
+    Write-Event 'root_force_close' (Get-ProcessDetails $current)
+    Stop-Process -InputObject $app -Force -ErrorAction Stop
+    if (!$app.WaitForExit(5000)) { throw 'Desktop root did not exit after explicit forced close.' }
 }
 
 function Stop-SavedTree($Plan) {
@@ -186,6 +196,7 @@ function Invoke-Main {
         '" -Worker -ThreadId ' + $ThreadId + ' -DesktopPid ' + $plan.RootPid +
         ' -ExpectedCreated ' + $plan.RootCreated + ' -DispatchDelaySeconds ' + $DispatchDelaySeconds +
         ' -LogPath "' + $script:LogPath + '"'
+    if ($ForceClose) { $command += ' -ForceClose' }
     $startup = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ ShowWindow = [uint16]0 }
     $result = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
         CommandLine = $command; CurrentDirectory = (Get-Location).Path; ProcessStartupInformation = $startup

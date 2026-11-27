@@ -55,6 +55,8 @@ Report working-set decreases as estimates: shared pages can be counted more than
 
 A returned worker PID confirms dispatch, not successful restart. The worker records `launched` after process creation; it cannot verify that the UI actually opened the chat. Report that limitation accurately.
 
+For an explicitly authorized forced-close test, `-ForceClose` allows terminating the saved, revalidated desktop root if window closure has not ended it within five seconds. It records `root_force_close` and then follows normal saved-tree cleanup and the 20-second delay. Do not add this flag to routine scheduled runs without user authorization; ordinary window closure may only hide the app in the system tray.
+
 Cleanup is scoped to the saved tree, including tool-launched descendants. Already-orphaned processes outside that tree and children spawned after the snapshot are not identified. Do not expand cleanup to unrelated processes as a fallback. If cleanup fails after the app closed, the worker attempts to restore the application and records the failure; do not report a clean restart.
 
 ## Maintenance and verification
