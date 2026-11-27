@@ -90,9 +90,10 @@ function Write-Event([string]$Event, $Details) {
     [System.IO.File]::AppendAllText($script:LogPath, $line + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 }
 
-function Focus-DesktopForQuit($App) {
+function Focus-DesktopForQuit($App, [IntPtr]$ExpectedWindow = [IntPtr]::Zero) {
     $window = $App.MainWindowHandle
     if ($window -eq [IntPtr]::Zero) { return $false }
+    if ($ExpectedWindow -ne [IntPtr]::Zero -and $window -ne $ExpectedWindow) { return $false }
     if (!('CodexQuitNative' -as [type])) {
         Add-Type @'
 using System;
@@ -110,7 +111,7 @@ public static class CodexQuitNative {
     $foreground = [CodexQuitNative]::GetForegroundWindow()
     [uint32]$foregroundPid = 0
     $null = [CodexQuitNative]::GetWindowThreadProcessId($foreground, [ref]$foregroundPid)
-    return $foregroundPid -eq $App.Id
+    return $foreground -eq $window -and $foregroundPid -eq $App.Id
 }
 
 function Send-DesktopQuitShortcut {
@@ -119,9 +120,9 @@ function Send-DesktopQuitShortcut {
     finally { $null = [System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
 }
 
-function Request-DesktopQuit($App) {
+function Request-DesktopQuit($App, [IntPtr]$ExpectedWindow = [IntPtr]::Zero) {
     # The installed Windows app binds Ctrl+Q to Electron's real Quit command.
-    if (!(Focus-DesktopForQuit $App)) { return $false }
+    if (!(Focus-DesktopForQuit $App $ExpectedWindow)) { return $false }
     Send-DesktopQuitShortcut
     return $true
 }
@@ -147,6 +148,7 @@ function Close-Desktop($Plan) {
     if (!$current -or (Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root changed.' }
     $app = Get-Process -Id $Plan.RootPid
     $null = $app.Handle
+    $quitWindow = $app.MainWindowHandle
     $attempt = 0
     # Two real Quit requests: at the start and after 15 seconds. Allow 45 seconds total.
     foreach ($waitMs in @(15000, 30000)) {
@@ -154,7 +156,7 @@ function Close-Desktop($Plan) {
         if (!$current) { return }
         if ((Get-CreatedTicks $current) -ne $Plan.RootCreated) { throw 'Desktop root identity changed during graceful close.' }
         $app.Refresh()
-        $accepted = Request-DesktopQuit $app
+        $accepted = Request-DesktopQuit $app $quitWindow
         $attempt++
         Write-Event 'graceful_close_request' @{ Pid = $Plan.RootPid; Attempt = $attempt; Accepted = $accepted; Method = 'Ctrl+Q'; WaitMilliseconds = $waitMs }
         if ($app.WaitForExit($waitMs)) { return }
