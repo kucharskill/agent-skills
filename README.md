@@ -10,7 +10,6 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | [Email Handling](email-handling/SKILL.md) | Mail search, previews, drafts, organization, and explicit approval before sending | Experimental |
 | [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
 | [Standardize Agent Layout](standardize-agent-layout/SKILL.md) | Set up and gradually migrate shared agent instructions and skills across coding clients | Experimental |
-| [Restart Codex (ChatGPT Desktop)](restart-codex/SKILL.md) | Immediate manual restart or quiet bounded scheduled checks for ChatGPT Desktop on Windows | Experimental |
 
 ## Installation
 
@@ -94,21 +93,6 @@ Fixtures stay under .tmp/; generated extraction artifacts use the OS temporary d
 ## Scope and limitations
 
 This is an experimental workflow, not a guarantee that every detail is preserved. Transcript errors may require verification against supplied materials or primary sources. Review of a transcript does not establish accuracy against the original recording.
-
-## Restart Codex (ChatGPT Desktop)
-
-Use `$restart-codex` to restart Codex in **ChatGPT Desktop for Windows** immediately. Manual mode dispatches the PowerShell helper without chat pagination or an idle-time requirement. It reopens the selected chat without sending another prompt.
-
-The separate scheduled-check mode configures or updates a thread heartbeat. It checks at most two pages of local chats, retains the configured idle interval, and stays quiet for skips and successful restarts. Chat notifications are reserved for failures of that automation. Read [scheduled checks](restart-codex/references/scheduled-checks.md) for the bounded policy.
-
-The helper restores a tray-only window, invokes real Quit through the verified Ctrl+Q accelerator, and cleans up saved process identities using a bulk snapshot and per-candidate identity checks. It launches the new app as soon as the saved tree is confirmed empty, without a fixed 20-second delay. An explicit forced-close fallback still waits through two graceful requests and 45 seconds.
-
-Only actual restart attempts write local JSONL logs under the system TEMP directory in `codex-idle-restart/`, retained for compatibility. They include commands with common credential values redacted, cleanup results, memory estimates, and an optional automation ID. Dry runs and skipped checks create no logs. The log records process launch, not verified UI navigation or exact net RAM savings.
-
-```powershell
-& ./restart-codex/scripts/restart-codex.ps1 -ThreadId '<local-chat-uuid>'
-& ./tests/restart-codex.ps1
-```
 
 ## License
 

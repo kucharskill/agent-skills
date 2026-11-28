@@ -1,4 +1,0 @@
-interface:
-  display_name: "Restart Codex (ChatGPT Desktop)"
-  short_description: "Restart Codex in ChatGPT Desktop for Windows"
-  default_prompt: "Use $restart-codex to restart Codex in ChatGPT Desktop now."
