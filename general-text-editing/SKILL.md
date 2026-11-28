@@ -25,4 +25,6 @@ Use relevant guidance from the following skills when available locally. Apply gu
 - [avoid-ai-writing](https://github.com/conorbronsdon/avoid-ai-writing) for a selective audit of repetitive or formulaic language.
 - [blader/humanizer](https://github.com/blader/humanizer) for structural patterns and voice matching when a deeper edit is in scope.
 
-Select only the guidance relevant to the text. Follow the user's instructions and the editing rules above when an external skill suggests adding details, changing terminology, or rewriting beyond the agreed scope. If a helper is unavailable, proceed with this skill's rules.
+Select only the guidance relevant to the text. Follow the user's instructions and the editing rules above when an external skill suggests adding details, changing terminology, or rewriting beyond the agreed scope.
+
+If a listed helper would be useful for the current task and is not installed, ask the user whether to install it. Name the relevant missing helpers and briefly explain what each would contribute. Install a helper only after the user explicitly approves its installation. Continue with this skill's rules for work that can proceed while awaiting a reply or if the user declines.
