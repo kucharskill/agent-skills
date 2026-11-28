@@ -10,6 +10,7 @@ Reusable, discipline-independent skills for agents that support SKILL.md instruc
 | [Email Handling](email-handling/SKILL.md) | Mail search, previews, drafts, organization, and explicit approval before sending | Experimental |
 | [Meeting Video Frames](meeting-video-frames/SKILL.md) | Sparse, visually deduplicated screenshots from meeting recordings, saved to identifiable temporary folders without content analysis | Experimental |
 | [Standardize Agent Layout](standardize-agent-layout/SKILL.md) | Set up and gradually migrate shared agent instructions and skills across coding clients | Experimental |
+| [General Text Editing](general-text-editing/SKILL.md) | Draft and edit prose while preserving the author's voice, meaning, and precise terminology | Experimental |
 
 ## Installation
 
