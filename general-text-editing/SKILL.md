@@ -19,12 +19,12 @@ For an existing text, default to a light edit. Keep the author's voice, register
 
 ## Supplementary skills
 
-Use relevant guidance from the following skills when available locally. Apply guidance on clarity, specificity, rhythm, and structure in any language where it fits. Apply word lists, idioms, syntax, and punctuation advice only where suitable for the language and register of the target text.
+Use guidance from the following installed helpers only where it fits the context and language of the text. Apply general principles of clarity, specificity, rhythm, and structure across languages. Match word lists, idioms, syntax, and punctuation advice to the target language and register.
 
 - [codex-humanizer-pl](https://github.com/mateuszkozlowski/codex-humanizer-pl) for Polish calques, idioms, syntax, and characteristic phrasing.
 - [avoid-ai-writing](https://github.com/conorbronsdon/avoid-ai-writing) for a selective audit of repetitive or formulaic language.
 - [blader/humanizer](https://github.com/blader/humanizer) for structural patterns and voice matching when a deeper edit is in scope.
 
-Select only the guidance relevant to the text. Follow the user's instructions and the editing rules above when an external skill suggests adding details, changing terminology, or rewriting beyond the agreed scope.
+Follow the user's instructions and the editing rules above when an external skill suggests adding details, changing terminology, or rewriting beyond the agreed scope.
 
-If a listed helper would be useful for the current task and is not installed, ask the user whether to install it. Name the relevant missing helpers and briefly explain what each would contribute. Install a helper only after the user explicitly approves its installation. Continue with this skill's rules for work that can proceed while awaiting a reply or if the user declines.
+When using this skill, check which of the listed helpers are installed. If any are missing, ask the user once per task whether to install them and name every missing helper. Install only the helpers the user explicitly approves. Continue with this skill's rules for work that can proceed while awaiting a reply or if the user declines.
